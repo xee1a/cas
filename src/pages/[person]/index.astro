@@ -4,6 +4,8 @@ import { STRANDS } from '../../content.config';
 import { PEOPLE, getPerson } from '../../people';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Comments from '../../components/Comments.astro';
+import T from '../../components/T.astro';
+import { STRAND_PL, STRAND_SUB_PL, STRAND_SUB_EN } from '../../i18n';
 
 export async function getStaticPaths() {
   return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
@@ -23,21 +25,16 @@ const posts = await getCollection(
 );
 const covered = new Set(posts.flatMap((p) => p.data.learningOutcomes)).size;
 
-const CAPTION: Record<string, string> = {
-  Creativity: 'Art, projects, making',
-  Activity: 'Sport, movement, effort',
-  Service: 'Volunteering, helping others',
-};
 ---
 
 <BaseLayout title={`${person.name} · CAS Portfolio`} description={person.intro} person={person}>
   <section class="home wrap">
-    <a class="back-link" href={base}>&larr; All portfolios</a>
+    <a class="back-link" href={base}>&larr; <T en="All portfolios" pl="Wszystkie portfolia" /></a>
     <header class="profile">
       {photoSrc && <img class="profile-photo" src={photoSrc} alt={person.name} />}
       <h1>{person.name}</h1>
-      <p class="tagline">{person.tagline}</p>
-      <p class="lede">{person.intro}</p>
+      <p class="tagline"><T en={person.tagline} pl={person.taglinePl} /></p>
+      <p class="lede"><T en={person.intro} pl={person.introPl} /></p>
     </header>
 
     <nav class="strand-list" aria-label="CAS strands">
@@ -45,17 +42,17 @@ const CAPTION: Record<string, string> = {
         <a class={`strand-row ${s}`} href={`${base}${person.slug}/${s.toLowerCase()}/`}>
           <span class="strand-mark" aria-hidden="true"></span>
           <span class="strand-body">
-            <span class="strand-name">{s}</span>
-            <span class="strand-sub">{CAPTION[s]}</span>
+            <span class="strand-name"><T en={s} pl={STRAND_PL[s]} /></span>
+            <span class="strand-sub"><T en={STRAND_SUB_EN[s]} pl={STRAND_SUB_PL[s]} /></span>
           </span>
         </a>
       ))}
     </nav>
 
     <nav class="home-links">
-      <a href={`${base}${person.slug}/reflections/`}>All experiences</a>
+      <a href={`${base}${person.slug}/reflections/`}><T en="All experiences" pl="Wszystkie doświadczenia" /></a>
       <span aria-hidden="true">·</span>
-      <a href={`${base}${person.slug}/progress/`}>Learning outcomes {covered}/7</a>
+      <a href={`${base}${person.slug}/progress/`}><T en="Learning outcomes" pl="Efekty uczenia się" /> {covered}/7</a>
     </nav>
 
     <Comments slug={person.slug} name={person.name} />

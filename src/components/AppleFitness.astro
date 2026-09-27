@@ -20,7 +20,14 @@ interface Props {
   workouts?: Workout[];
 }
 
+import T from './T.astro';
 const { activity = 'Pływanie', rings, workouts = [] } = Astro.props;
+
+const plSessions = (c: number) => {
+  if (c === 1) return 'sesja';
+  const m10 = c % 10, m100 = c % 100;
+  return m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14) ? 'sesje' : 'sesji';
+};
 
 // --- podsumowanie sesji (dowod: laczny dystans i czas) ---
 const totalMeters = workouts.reduce((s, w) => s + w.distance, 0);
@@ -55,7 +62,7 @@ const dash = (r: number, val: number, goal: number) => {
 <div class="af">
   <div class="af-head">
     <span class="af-dot"></span>
-    <span class="af-title">{activity} · Summary</span>
+    <span class="af-title">{activity} · <T en="Summary" pl="Podsumowanie" /></span>
   </div>
 
   {rings && (
@@ -74,29 +81,29 @@ const dash = (r: number, val: number, goal: number) => {
         </g>
       </svg>
       <ul class="af-legend">
-        <li class="af-move"><b>Move</b><span>{rings.move}<i>/{rings.moveGoal} kcal</i></span></li>
-        <li class="af-exercise"><b>Exercise</b><span>{rings.exercise}<i>/{rings.exerciseGoal} min</i></span></li>
-        <li class="af-stand"><b>Stand</b><span>{rings.stand}<i>/{rings.standGoal} h</i></span></li>
+        <li class="af-move"><b><T en="Move" pl="Ruch" /></b><span>{rings.move}<i>/{rings.moveGoal} kcal</i></span></li>
+        <li class="af-exercise"><b><T en="Exercise" pl="Ćwiczenia" /></b><span>{rings.exercise}<i>/{rings.exerciseGoal} min</i></span></li>
+        <li class="af-stand"><b><T en="Stand" pl="Stanie" /></b><span>{rings.stand}<i>/{rings.standGoal} h</i></span></li>
       </ul>
     </div>
   )}
 
   {latest && (
     <>
-      <div class="af-section-label">Latest workout</div>
+      <div class="af-section-label"><T en="Latest workout" pl="Ostatni trening" /></div>
       <div class="af-tiles">
-        <div class="af-tile"><span class="af-lbl">Distance</span><span class="af-val v-green">{fmtDist(latest.distance)}</span></div>
-        <div class="af-tile"><span class="af-lbl">Time</span><span class="af-val">{latest.duration}</span></div>
-        {latest.pace && <div class="af-tile"><span class="af-lbl">Avg pace</span><span class="af-val">{latest.pace}</span></div>}
-        {latest.calories != null && <div class="af-tile"><span class="af-lbl">Calories</span><span class="af-val v-move">{latest.calories}<i> kcal</i></span></div>}
-        {latest.avgHr != null && <div class="af-tile"><span class="af-lbl">Avg HR</span><span class="af-val v-hr">{latest.avgHr}<i> bpm</i></span></div>}
+        <div class="af-tile"><span class="af-lbl"><T en="Distance" pl="Dystans" /></span><span class="af-val v-green">{fmtDist(latest.distance)}</span></div>
+        <div class="af-tile"><span class="af-lbl"><T en="Time" pl="Czas" /></span><span class="af-val">{latest.duration}</span></div>
+        {latest.pace && <div class="af-tile"><span class="af-lbl"><T en="Avg pace" pl="Śr. tempo" /></span><span class="af-val">{latest.pace}</span></div>}
+        {latest.calories != null && <div class="af-tile"><span class="af-lbl"><T en="Calories" pl="Kalorie" /></span><span class="af-val v-move">{latest.calories}<i> kcal</i></span></div>}
+        {latest.avgHr != null && <div class="af-tile"><span class="af-lbl"><T en="Avg HR" pl="Śr. tętno" /></span><span class="af-val v-hr">{latest.avgHr}<i> bpm</i></span></div>}
       </div>
     </>
   )}
 
   {sessions > 0 && (
     <>
-      <div class="af-section-label">Swim log <span class="af-count">{sessions} sessions</span></div>
+      <div class="af-section-label"><T en="Swim log" pl="Dziennik pływania" /> <span class="af-count"><T en={`${sessions} sessions`} pl={`${sessions} ${plSessions(sessions)}`} /></span></div>
       <div class="af-log">
         {workouts.map((w) => (
           <div class="af-log-row">
@@ -107,8 +114,8 @@ const dash = (r: number, val: number, goal: number) => {
         ))}
       </div>
       <div class="af-totals">
-        <div><span class="af-t-num v-green">{totalKm.toLocaleString('en-GB', { maximumFractionDigits: 1 })}</span><span class="af-t-lbl">km total</span></div>
-        <div><span class="af-t-num">{totalTimeH > 0 ? `${totalTimeH}h ` : ''}{totalTimeM}m</span><span class="af-t-lbl">in the water</span></div>
+        <div><span class="af-t-num v-green">{totalKm.toLocaleString('en-GB', { maximumFractionDigits: 1 })}</span><span class="af-t-lbl"><T en="km total" pl="km łącznie" /></span></div>
+        <div><span class="af-t-num">{totalTimeH > 0 ? `${totalTimeH}h ` : ''}{totalTimeM}m</span><span class="af-t-lbl"><T en="in the water" pl="w wodzie" /></span></div>
         {totalCal > 0 && <div><span class="af-t-num v-move">{totalCal.toLocaleString('en-GB')}</span><span class="af-t-lbl">kcal</span></div>}
       </div>
     </>

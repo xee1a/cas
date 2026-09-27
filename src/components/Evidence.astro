@@ -1,4 +1,5 @@
 ---
+import T from './T.astro';
 interface Img { src: string; caption?: string }
 interface Att { src: string; label: string }
 interface Props { gallery?: Img[]; attachments?: Att[] }
@@ -10,7 +11,7 @@ const resolve = (s: string) => (s.startsWith('http') ? s : base + s.replace(/^\/
 
 {(gallery.length > 0 || attachments.length > 0) && (
   <section class="evidence">
-    <h2 class="evidence-title">Evidence</h2>
+    <h2 class="evidence-title"><T en="Evidence" pl="Dowody" /></h2>
 
     {gallery.length > 0 && (
       <div class="gallery">

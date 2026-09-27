@@ -1,0 +1,7 @@
+---
+// Inline bilingual text. Both languages are rendered; CSS shows the active one
+// based on :root[data-lang]. Default is English.
+interface Props { en: string; pl: string }
+const { en, pl } = Astro.props;
+---
+<span class="lang-en">{en}</span><span class="lang-pl">{pl}</span>

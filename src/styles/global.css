@@ -125,7 +125,22 @@ a { color: inherit; }
 }
 .nav a:hover { color: var(--text); }
 
-.header-right { display: flex; align-items: center; gap: 18px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+/* Bilingual text: show the active language, hide the other (default English) */
+.lang-pl { display: none; }
+:root[data-lang='pl'] .lang-en { display: none; }
+:root[data-lang='pl'] .lang-pl { display: inline; }
+
+/* Language switcher (EN / PL) */
+.lang-switch { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.lang-switch .lang-btn {
+  font: inherit; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--muted); background: transparent; border: 0; padding: 5px 9px; cursor: pointer;
+}
+.lang-switch .lang-btn + .lang-btn { border-left: 1px solid var(--border); }
+.lang-switch .lang-btn:hover { color: var(--text); }
+.lang-switch .lang-btn[aria-pressed='true'] { background: var(--text); color: var(--bg); }
 
 /* Theme switcher: three shade swatches (dark, neutral, light) */
 .theme-switch { display: inline-flex; align-items: center; gap: 7px; }

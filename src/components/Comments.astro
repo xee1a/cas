@@ -1,18 +1,20 @@
 ---
 import { FIREBASE_CONFIG } from '../firebase-config';
+import T from './T.astro';
 interface Props { slug: string; name: string }
 const { slug, name } = Astro.props;
+const firstName = name.split(' ')[0];
 ---
 
 <section class="comments" aria-label={`Comments for ${name}`}>
-  <h2 class="comments-title">Notes for {name}</h2>
+  <h2 class="comments-title"><T en={`Notes for ${name}`} pl={`Notatki dla: ${name}`} /></h2>
   <p class="comments-sub" id={`csub-${slug}`}></p>
 
   <form class="comment-form" id={`cform-${slug}`}>
-    <input class="c-name" type="text" maxlength="40" placeholder="Your name (optional)" aria-label="Your name" />
-    <textarea class="c-text" rows="3" maxlength="600" placeholder={`Leave a note for ${name}...`} aria-label="Your comment" required></textarea>
+    <input class="c-name" type="text" maxlength="40" data-ph-en="Your name (optional)" data-ph-pl="Twoje imię (opcjonalnie)" aria-label="Your name" />
+    <textarea class="c-text" rows="3" maxlength="600" data-ph-en={`Leave a note for ${firstName}...`} data-ph-pl={`Zostaw notatkę dla ${firstName}...`} aria-label="Your comment" required></textarea>
     <div class="c-actions">
-      <button type="submit" class="c-submit">Post note</button>
+      <button type="submit" class="c-submit"><T en="Post note" pl="Dodaj notatkę" /></button>
     </div>
   </form>
 
@@ -52,21 +54,40 @@ const { slug, name } = Astro.props;
     const textInput = form.querySelector('.c-text');
     const submitBtn = form.querySelector('.c-submit');
 
+    const lang = () => (document.documentElement.dataset.lang === 'pl' ? 'pl' : 'en');
+    const STR = {
+      subPublic: { en: 'Notes are public and visible to everyone.', pl: 'Notatki są publiczne i widoczne dla wszystkich.' },
+      subPreview: { en: 'Preview mode: notes are only saved in this browser until the owner connects the backend.', pl: 'Tryb podglądu: notatki są zapisywane tylko w tej przeglądarce, dopóki właściciel nie podłączy zaplecza.' },
+      empty: { en: 'No notes yet. Be the first to leave one.', pl: 'Brak notatek. Zostaw pierwszą.' },
+      anon: { en: 'Anonymous', pl: 'Anonim' },
+    };
+    let subKey = 'subPreview';
+    let lastComments = [];
+
+    const applyPlaceholders = () => {
+      const l = lang();
+      form.querySelectorAll('[data-ph-en]').forEach((el) => {
+        el.setAttribute('placeholder', el.getAttribute('data-ph-' + l) || '');
+      });
+    };
+
     const fmt = (ts) => {
       try {
+        const loc = lang() === 'pl' ? 'pl-PL' : 'en-GB';
         const d = new Date(ts);
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
-          ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString(loc, { day: 'numeric', month: 'short', year: 'numeric' }) +
+          ', ' + d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
       } catch (e) { return ''; }
     };
 
     // Render safely: user text is set via textContent, never innerHTML.
     function render(comments) {
+      lastComments = comments;
       listEl.innerHTML = '';
       if (!comments.length) {
         const li = document.createElement('li');
         li.className = 'comment-empty';
-        li.textContent = 'No notes yet. Be the first to leave one.';
+        li.textContent = STR.empty[lang()];
         listEl.appendChild(li);
         return;
       }
@@ -78,7 +99,7 @@ const { slug, name } = Astro.props;
         head.className = 'comment-head';
         const author = document.createElement('span');
         author.className = 'comment-author';
-        author.textContent = (c.name && String(c.name).trim()) || 'Anonymous';
+        author.textContent = (c.name && String(c.name).trim()) || STR.anon[lang()];
         const when = document.createElement('span');
         when.className = 'comment-when';
         when.textContent = c.ts ? fmt(c.ts) : '';
@@ -105,7 +126,8 @@ const { slug, name } = Astro.props;
         const val = snap.val() || {};
         render(Object.values(val));
       });
-      subEl.textContent = 'Notes are public and visible to everyone.';
+      subKey = 'subPublic';
+      subEl.textContent = STR.subPublic[lang()];
       return { add(c) { dbMod.push(listRef, c); } };
     }
 
@@ -113,7 +135,8 @@ const { slug, name } = Astro.props;
       const KEY = 'comments_' + slug;
       const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
       render(read());
-      subEl.textContent = 'Preview mode: notes are only saved in this browser until the owner connects the backend.';
+      subKey = 'subPreview';
+      subEl.textContent = STR.subPreview[lang()];
       return { add(c) { const all = read(); all.push(c); try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} render(all); } };
     }
 
@@ -127,6 +150,13 @@ const { slug, name } = Astro.props;
         textInput.value = '';
       } catch (err) {}
       submitBtn.disabled = false;
+    });
+
+    applyPlaceholders();
+    document.addEventListener('langchange', () => {
+      applyPlaceholders();
+      subEl.textContent = STR[subKey][lang()];
+      render(lastComments);
     });
 
     (async () => {

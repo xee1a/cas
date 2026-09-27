@@ -1,14 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { FIREBASE_CONFIG } from '../firebase-config';
+import T from '../components/T.astro';
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 
 <BaseLayout title="Four-Player Chess">
   <section class="fpc-wrap">
-    <p class="fpc-back"><a href={base}>&larr; Back to portfolios</a></p>
-    <h1 class="fpc-title">Four-Player Chess</h1>
-    <p class="fpc-lede">A hidden corner of the portfolio. Four players queue up, then play.</p>
+    <p class="fpc-back"><a href={base}>&larr; <T en="Back to portfolios" pl="Powrót do portfolii" /></a></p>
+    <h1 class="fpc-title"><T en="Four-Player Chess" pl="Szachy czteroosobowe" /></h1>
+    <p class="fpc-lede"><T en="A hidden corner of the portfolio. Four players queue up, then play." pl="Ukryty zakątek portfolio. Czterej gracze ustawiają się w kolejce, potem grają." /></p>
 
     <div id="fpc-status" class="fpc-statusbar" aria-live="polite"></div>
     <div id="fpc-lobby" class="fpc-lobby" hidden></div>
@@ -16,7 +17,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
       <div id="fpc-board" class="fpc-board"></div>
     </div>
     <div class="fpc-controls">
-      <button id="fpc-reset" class="fpc-btn" type="button">New table</button>
+      <button id="fpc-reset" class="fpc-btn" type="button"><T en="New table" pl="Nowy stół" /></button>
       <span id="fpc-mode" class="fpc-mode"></span>
     </div>
   </section>
@@ -77,6 +78,42 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   // ===================== 4-Player Chess =====================
   const COLORS = ['R', 'B', 'Y', 'G'];
   const COLOR_NAME = { R: 'Red', B: 'Blue', Y: 'Yellow', G: 'Green' };
+  const COLOR_NAME_PL = { R: 'Czerwony', B: 'Niebieski', Y: 'Żółty', G: 'Zielony' };
+  const L = () => (document.documentElement.dataset.lang === 'pl' ? 'pl' : 'en');
+  const cn = (c) => (L() === 'pl' ? COLOR_NAME_PL : COLOR_NAME)[c];
+  const TXT = {
+    connecting: { en: 'Connecting...', pl: 'Łączenie...' },
+    online: { en: 'Online: play across devices.', pl: 'Online: gra na różnych urządzeniach.' },
+    sameDevice: {
+      en: 'Same-device mode: open this page in another tab or window to add players.',
+      pl: 'Tryb jednego urządzenia: otwórz tę stronę w innej karcie lub oknie, aby dodać graczy.',
+    },
+    waiting: {
+      en: (n) => 'Waiting for players. ' + n + ' / 4 seated. The game starts automatically when all four seats are taken.',
+      pl: (n) => 'Oczekiwanie na graczy. ' + n + ' / 4 zajęte. Gra rozpocznie się automatycznie, gdy zajęte będą wszystkie cztery miejsca.',
+    },
+    open: { en: 'Open seat', pl: 'Wolne miejsce' },
+    you: { en: 'You', pl: 'Ty' },
+    taken: { en: 'Taken', pl: 'Zajęte' },
+    join: { en: 'Join', pl: 'Dołącz' },
+    switch: { en: 'Switch here', pl: 'Przesiądź się' },
+    leave: { en: 'Leave', pl: 'Opuść' },
+    soloQ: { en: 'On your own?', pl: 'Grasz sam?' },
+    soloDesc: {
+      en: 'Play all four colours yourself on this device (pass and play).',
+      pl: 'Zagraj wszystkimi czterema kolorami na tym urządzeniu (gra na zmianę).',
+    },
+    soloBtn: { en: 'Play solo', pl: 'Graj solo' },
+    wins: { en: (c) => c + ' wins.', pl: (c) => c + ' wygrywa.' },
+    gameOver: { en: 'Game over.', pl: 'Koniec gry.' },
+    toMove: { en: (c) => c + ' to move.', pl: (c) => 'Ruch: ' + c + '.' },
+    yourMove: { en: ' Your move.', pl: ' Twój ruch.' },
+    youAre: { en: (c) => ' You are ' + c + '.', pl: (c) => ' Grasz jako ' + c + '.' },
+    spectating: { en: ' (spectating)', pl: ' (obserwujesz)' },
+    mate: { en: (c) => c + ' was checkmated.', pl: (c) => c + ' dostał mata.' },
+    stale: { en: (c) => c + ' was stalemated.', pl: (c) => c + ' znalazł się w pacie.' },
+  };
+  const tx = (k, ...a) => { const v = TXT[k][L()]; return typeof v === 'function' ? v(...a) : v; };
   const COLOR_HEX = { R: '#d23b3b', B: '#2f6fd6', Y: '#c99a00', G: '#2e9e3f' };
   const GLYPH = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' };
 
@@ -352,9 +389,9 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     let note = '';
     while (aliveCount(alive) > 1) {
       if (hasAnyLegal(b, alive, turn)) break;
-      const reason = inCheck(b, alive, turn) ? 'checkmated' : 'stalemated';
+      const k = inCheck(b, alive, turn) ? 'mate' : 'stale';
       eliminate(b, alive, turn);
-      note = COLOR_NAME[turn] + ' was ' + reason + '.';
+      note = { c: turn, k: k };
       turn = nextAlive(alive, turn);
     }
     s.board = b;
@@ -396,17 +433,18 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     const modeEl = $('fpc-mode');
     if (!statusEl) return;
 
-    modeEl.textContent = net
-      ? net.kind === 'firebase'
-        ? 'Online: play across devices.'
-        : 'Same-device mode: open this page in another tab or window to add players.'
-      : 'Connecting...';
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const noteText = (note) => (note && note.c ? ' ' + (note.k === 'mate' ? tx('mate', cn(note.c)) : tx('stale', cn(note.c))) : '');
 
-    if (!state) { statusEl.textContent = 'Connecting...'; lobbyEl.hidden = true; boardOuter.hidden = true; return; }
+    modeEl.textContent = net
+      ? net.kind === 'firebase' ? tx('online') : tx('sameDevice')
+      : tx('connecting');
+
+    if (!state) { statusEl.textContent = tx('connecting'); lobbyEl.hidden = true; boardOuter.hidden = true; return; }
 
     if (state.status === 'lobby') {
       const filled = COLORS.filter((c) => state.seats[c]).length;
-      statusEl.textContent = 'Waiting for players. ' + filled + ' / 4 seated. The game starts automatically when all four seats are taken.';
+      statusEl.textContent = tx('waiting', filled);
       lobbyEl.hidden = false;
       boardOuter.hidden = true;
       lobbyEl.innerHTML = '';
@@ -418,21 +456,21 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
         div.className = 'seat' + (isMine ? ' mine' : '');
         div.innerHTML =
           '<span class="chip" style="background:' + COLOR_HEX[c] + '"></span>' +
-          '<span class="who"><b>' + COLOR_NAME[c] + '</b><small>' +
-          (taken ? (isMine ? 'You' : 'Taken') : 'Open seat') + '</small></span>';
+          '<span class="who"><b>' + esc(cn(c)) + '</b><small>' +
+          (taken ? (isMine ? tx('you') : tx('taken')) : tx('open')) + '</small></span>';
         const btn = document.createElement('button');
-        if (isMine) { btn.textContent = 'Leave'; btn.onclick = leave; }
-        else if (taken) { btn.textContent = 'Taken'; btn.disabled = true; btn.style.opacity = '0.5'; }
-        else { btn.textContent = mine ? 'Switch here' : 'Join'; btn.onclick = () => claim(c); }
+        if (isMine) { btn.textContent = tx('leave'); btn.onclick = leave; }
+        else if (taken) { btn.textContent = tx('taken'); btn.disabled = true; btn.style.opacity = '0.5'; }
+        else { btn.textContent = mine ? tx('switch') : tx('join'); btn.onclick = () => claim(c); }
         div.appendChild(btn);
         lobbyEl.appendChild(div);
       }
       const solo = document.createElement('div');
       solo.className = 'seat';
       solo.style.gridColumn = '1 / -1';
-      solo.innerHTML = '<span class="who"><b>On your own?</b><small>Play all four colours yourself on this device (pass and play).</small></span>';
+      solo.innerHTML = '<span class="who"><b>' + tx('soloQ') + '</b><small>' + tx('soloDesc') + '</small></span>';
       const sb = document.createElement('button');
-      sb.textContent = 'Play solo';
+      sb.textContent = tx('soloBtn');
       sb.onclick = playSolo;
       solo.appendChild(sb);
       lobbyEl.appendChild(solo);
@@ -445,15 +483,15 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     const mine = myColor();
     if (state.status === 'over') {
       statusEl.innerHTML =
-        (state.winner ? '<span class="turn-dot" style="background:' + COLOR_HEX[state.winner] + '"></span>' + COLOR_NAME[state.winner] + ' wins.' : 'Game over.') +
-        (state.note ? ' ' + state.note : '');
+        (state.winner ? '<span class="turn-dot" style="background:' + COLOR_HEX[state.winner] + '"></span>' + esc(tx('wins', cn(state.winner))) : tx('gameOver')) +
+        noteText(state.note);
     } else {
       const yourTurn = state.seats[state.turn] === CLIENT_ID;
       statusEl.innerHTML =
         '<span class="turn-dot" style="background:' + COLOR_HEX[state.turn] + '"></span>' +
-        COLOR_NAME[state.turn] + ' to move.' +
-        (yourTurn ? ' <b>Your move.</b>' : mine ? ' You are ' + COLOR_NAME[mine] + '.' : ' (spectating)') +
-        (state.note ? ' ' + state.note : '');
+        esc(tx('toMove', cn(state.turn))) +
+        (yourTurn ? ' <b>' + tx('yourMove').trim() + '</b>' : mine ? esc(tx('youAre', cn(mine))) : tx('spectating')) +
+        noteText(state.note);
     }
 
     const b = state.board;
@@ -496,6 +534,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
     net.onChange(onRemote);
     const rb = $('fpc-reset');
     if (rb) rb.addEventListener('click', reset);
+    document.addEventListener('langchange', () => render());
     // No shared table yet: show a local lobby so this client can seat itself.
     if (!state) state = freshLobby();
     render();

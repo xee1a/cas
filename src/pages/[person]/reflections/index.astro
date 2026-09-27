@@ -4,6 +4,8 @@ import { STRANDS } from '../../../content.config';
 import { PEOPLE } from '../../../people';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import PostList from '../../../components/PostList.astro';
+import T from '../../../components/T.astro';
+import { STRAND_PL } from '../../../i18n';
 
 export async function getStaticPaths() {
   return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
@@ -19,12 +21,12 @@ const posts = (
 <BaseLayout title={`All experiences · ${person.name}`} person={person}>
   <section class="wrap listing">
     <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
-    <h1 class="listing-title">All experiences</h1>
+    <h1 class="listing-title"><T en="All experiences" pl="Wszystkie doświadczenia" /></h1>
 
     <div class="filters">
-      <button class="filter-btn active" data-strand="all">All</button>
+      <button class="filter-btn active" data-strand="all"><T en="All" pl="Wszystkie" /></button>
       {STRANDS.map((s) => (
-        <button class="filter-btn" data-strand={s}>{s}</button>
+        <button class="filter-btn" data-strand={s}><T en={s} pl={STRAND_PL[s]} /></button>
       ))}
     </div>
 

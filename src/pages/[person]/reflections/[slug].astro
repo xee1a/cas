@@ -5,6 +5,9 @@ import { getPerson } from '../../../people';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import AppleFitness from '../../../components/AppleFitness.astro';
 import Evidence from '../../../components/Evidence.astro';
+import T from '../../../components/T.astro';
+import { STRAND_PL } from '../../../i18n';
+import { LEARNING_OUTCOMES_PL } from '../../../learning-outcomes';
 
 export async function getStaticPaths() {
   const posts = await getCollection('reflections', ({ data }) => !data.draft);
@@ -32,7 +35,7 @@ const los = post.data.learningOutcomes.sort((a, b) => a - b);
     <header class="article-header">
       <div class="post-meta">
         {post.data.strands.map((s) => (
-          <span class={`chip ${s}`}>{s}</span>
+          <span class={`chip ${s}`}><T en={s} pl={STRAND_PL[s]} /></span>
         ))}
         <span class="post-date">{fmtDate(post.data.date)}</span>
         {post.data.hours ? <span class="post-date">· {post.data.hours} h</span> : null}
@@ -60,10 +63,10 @@ const los = post.data.learningOutcomes.sort((a, b) => a - b);
 
     {los.length > 0 && (
       <div class="lo-callout">
-        <h3>Related Learning Outcomes</h3>
+        <h3><T en="Related Learning Outcomes" pl="Powiązane efekty uczenia się" /></h3>
         <ul>
           {los.map((n) => (
-            <li><span class="n">LO{n}</span><span>{LEARNING_OUTCOMES[n]}</span></li>
+            <li><span class="n">LO{n}</span><span><T en={LEARNING_OUTCOMES[n]} pl={LEARNING_OUTCOMES_PL[n]} /></span></li>
           ))}
         </ul>
       </div>

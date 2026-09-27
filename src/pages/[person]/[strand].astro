@@ -4,6 +4,8 @@ import { STRANDS } from '../../content.config';
 import { PEOPLE } from '../../people';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostList from '../../components/PostList.astro';
+import T from '../../components/T.astro';
+import { STRAND_PL, STRAND_SUB_PL, STRAND_SUB_EN } from '../../i18n';
 
 export async function getStaticPaths() {
   return PEOPLE.flatMap((person) =>
@@ -24,20 +26,15 @@ const posts = (
   )
 ).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const CAPTION: Record<string, string> = {
-  Creativity: 'Art, projects, making',
-  Activity: 'Sport, movement, effort',
-  Service: 'Volunteering, helping others',
-};
 ---
 
 <BaseLayout title={`${strand} · ${person.name}`} person={person}>
   <section class={`strand-page wrap ${strand}`}>
     <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
     <header class="strand-header">
-      <span class={`chip ${strand}`}>{strand}</span>
-      <h1>{strand}</h1>
-      <p>{CAPTION[strand]}</p>
+      <span class={`chip ${strand}`}><T en={strand} pl={STRAND_PL[strand]} /></span>
+      <h1><T en={strand} pl={STRAND_PL[strand]} /></h1>
+      <p><T en={STRAND_SUB_EN[strand]} pl={STRAND_SUB_PL[strand]} /></p>
     </header>
     <PostList posts={posts} person={person.slug} />
   </section>

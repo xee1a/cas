@@ -1,8 +1,17 @@
 ---
 import { getCollection } from 'astro:content';
 import { LEARNING_OUTCOMES } from '../../content.config';
+import { LEARNING_OUTCOMES_PL } from '../../learning-outcomes';
 import { PEOPLE } from '../../people';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import T from '../../components/T.astro';
+
+const plExp = (c: number) => {
+  if (c === 1) return 'doświadczenie';
+  const mod10 = c % 10;
+  const mod100 = c % 100;
+  return mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14) ? 'doświadczenia' : 'doświadczeń';
+};
 
 export async function getStaticPaths() {
   return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
@@ -25,12 +34,15 @@ const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
 <BaseLayout title={`Progress · ${person.name}`} person={person}>
   <section class="wrap listing">
     <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
-    <h1 class="listing-title">Learning Outcomes progress</h1>
+    <h1 class="listing-title"><T en="Learning Outcomes progress" pl="Postępy w efektach uczenia się" /></h1>
 
     <div class="tracker">
       <p class="sub">
-        {covered} / 7 covered. To complete CAS you need all seven.
-        <a class="lo-link" href={`${base}learning-outcomes/`}>What are they?</a>
+        <T
+          en={`${covered} / 7 covered. To complete CAS you need all seven.`}
+          pl={`${covered} / 7 pokrytych. Aby ukończyć CAS, potrzebujesz wszystkich siedmiu.`}
+        />
+        <a class="lo-link" href={`${base}learning-outcomes/`}><T en="What are they?" pl="Czym one są?" /></a>
       </p>
       <div class="lo-grid">
         {Object.entries(LEARNING_OUTCOMES).map(([num, text]) => {
@@ -40,18 +52,21 @@ const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
             <div class={`lo-row ${c > 0 ? 'covered' : ''}`}>
               <div class="lo-badge">LO{n}</div>
               <div class="lo-text">
-                {text}
-                <span class="count"> · {c > 0 ? `${c} ${c === 1 ? 'experience' : 'experiences'}` : 'none yet'}</span>
+                <T en={text} pl={LEARNING_OUTCOMES_PL[n]} />
+                <span class="count"> · <T
+                  en={c > 0 ? `${c} ${c === 1 ? 'experience' : 'experiences'}` : 'none yet'}
+                  pl={c > 0 ? `${c} ${plExp(c)}` : 'jeszcze brak'}
+                /></span>
               </div>
             </div>
           );
         })}
       </div>
       <div class="summary-stats">
-        <div class="stat"><div class="num">{posts.length}</div><div class="label">Experiences</div></div>
-        <div class="stat"><div class="num">{covered}/7</div><div class="label">Learning Outcomes</div></div>
+        <div class="stat"><div class="num">{posts.length}</div><div class="label"><T en="Experiences" pl="Doświadczenia" /></div></div>
+        <div class="stat"><div class="num">{covered}/7</div><div class="label"><T en="Learning Outcomes" pl="Efekty uczenia się" /></div></div>
         {totalHours > 0 && (
-          <div class="stat"><div class="num">{totalHours}</div><div class="label">CAS hours</div></div>
+          <div class="stat"><div class="num">{totalHours}</div><div class="label"><T en="CAS hours" pl="Godziny CAS" /></div></div>
         )}
       </div>
     </div>

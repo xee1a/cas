@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import type { Person } from '../people';
+import T from '../components/T.astro';
 
 interface Props {
   title: string;
@@ -40,6 +41,11 @@ const home = person ? `${base}${person.slug}/` : base;
         } catch (e) {
           document.documentElement.dataset.theme = 'dark';
         }
+        try {
+          document.documentElement.dataset.lang = localStorage.getItem('lang') === 'pl' ? 'pl' : 'en';
+        } catch (e) {
+          document.documentElement.dataset.lang = 'en';
+        }
       })();
     </script>
     <ClientRouter />
@@ -58,16 +64,20 @@ const home = person ? `${base}${person.slug}/` : base;
           {person ? (
             <a class="brand" href={home}>{person.name} <span>· CAS</span></a>
           ) : (
-            <a class="brand" href={base}>CAS Portfolios</a>
+            <a class="brand" href={base}><T en="CAS Portfolios" pl="Portfolia CAS" /></a>
           )}
         </div>
         <div class="header-right">
           <nav class="nav">
-            {person && <a href={`${base}${person.slug}/reflections/`}>Experiences</a>}
-            {person && <a href={`${base}${person.slug}/progress/`}>Progress</a>}
-            <a href={`${base}learning-outcomes/`}>Learning Outcomes</a>
-            <a href={base}>Portfolios</a>
+            {person && <a href={`${base}${person.slug}/reflections/`}><T en="Experiences" pl="Doświadczenia" /></a>}
+            {person && <a href={`${base}${person.slug}/progress/`}><T en="Progress" pl="Postępy" /></a>}
+            <a href={`${base}learning-outcomes/`}><T en="Learning Outcomes" pl="Efekty uczenia się" /></a>
+            <a href={base}><T en="Portfolios" pl="Portfolia" /></a>
           </nav>
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" class="lang-btn" data-lang-set="en">EN</button>
+            <button type="button" class="lang-btn" data-lang-set="pl">PL</button>
+          </div>
           <div class="theme-switch" role="group" aria-label="Theme">
             <button type="button" class="sw sw-dark" data-theme-set="dark" aria-label="Dark theme"></button>
             <button type="button" class="sw sw-neutral" data-theme-set="neutral" aria-label="Neutral theme"></button>
@@ -83,7 +93,7 @@ const home = person ? `${base}${person.slug}/` : base;
 
     <footer class="site-footer">
       <div class="wrap">
-        CAS Portfolio · IB Diploma Programme · <a class="egg" href={`${base}four-player-chess/`}>Creativity</a> · Activity · Service
+        <T en="CAS Portfolio" pl="Portfolio CAS" /> · <T en="IB Diploma Programme" pl="Program IB Diploma" /> · <a class="egg" href={`${base}four-player-chess/`}><T en="Creativity" pl="Kreatywność" /></a> · <T en="Activity" pl="Aktywność" /> · <T en="Service" pl="Służba" />
       </div>
     </footer>
 
@@ -111,23 +121,47 @@ const home = person ? `${base}${person.slug}/` : base;
             b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-set') === t));
           });
         };
+
+        // Language (en / pl). Same lifecycle as the theme: persisted, applied
+        // before paint, and re-applied after each view-transition swap.
+        const savedLang = () => {
+          try { return localStorage.getItem('lang') === 'pl' ? 'pl' : 'en'; } catch (err) { return 'en'; }
+        };
+        const applyLang = () => { document.documentElement.dataset.lang = savedLang(); };
+        const syncLang = () => {
+          const l = document.documentElement.dataset.lang || 'en';
+          document.querySelectorAll('[data-lang-set]').forEach((b) => {
+            b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-set') === l));
+          });
+        };
+
         if (!tw.__themeInit) {
           tw.__themeInit = true;
           document.addEventListener('click', (e) => {
-            const btn = (e.target as HTMLElement).closest('[data-theme-set]');
-            if (!btn) return;
-            const t = btn.getAttribute('data-theme-set') as string;
-            document.documentElement.dataset.theme = t;
-            try {
-              localStorage.setItem('theme', t);
-            } catch (err) {}
-            syncTheme();
+            const themeBtn = (e.target as HTMLElement).closest('[data-theme-set]');
+            if (themeBtn) {
+              const t = themeBtn.getAttribute('data-theme-set') as string;
+              document.documentElement.dataset.theme = t;
+              try { localStorage.setItem('theme', t); } catch (err) {}
+              syncTheme();
+              return;
+            }
+            const langBtn = (e.target as HTMLElement).closest('[data-lang-set]');
+            if (langBtn) {
+              const l = langBtn.getAttribute('data-lang-set') as string;
+              document.documentElement.dataset.lang = l;
+              try { localStorage.setItem('lang', l); } catch (err) {}
+              syncLang();
+              document.dispatchEvent(new CustomEvent('langchange', { detail: l }));
+            }
           });
-          document.addEventListener('astro:after-swap', applyTheme);
-          document.addEventListener('astro:page-load', syncTheme);
+          document.addEventListener('astro:after-swap', () => { applyTheme(); applyLang(); });
+          document.addEventListener('astro:page-load', () => { syncTheme(); syncLang(); });
         }
         applyTheme();
+        applyLang();
         syncTheme();
+        syncLang();
       }
     </script>
 

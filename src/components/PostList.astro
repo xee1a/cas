@@ -1,5 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import T from './T.astro';
+import { STRAND_PL } from '../i18n';
 
 interface Props {
   posts: CollectionEntry<'reflections'>[];
@@ -13,7 +15,7 @@ const fmtDate = (d: Date) =>
 ---
 
 {posts.length === 0 ? (
-  <p class="empty">No experiences here yet.</p>
+  <p class="empty"><T en="No experiences here yet." pl="Jeszcze nie ma tu doświadczeń." /></p>
 ) : (
   <ul class="posts">
     {posts.map((post) => (
@@ -21,7 +23,7 @@ const fmtDate = (d: Date) =>
         <a class="post-card" href={`${base}${person}/reflections/${post.id}/`}>
           <div class="post-meta">
             {post.data.strands.map((s) => (
-              <span class={`chip ${s}`}>{s}</span>
+              <span class={`chip ${s}`}><T en={s} pl={STRAND_PL[s]} /></span>
             ))}
             <span class="post-date">{fmtDate(post.data.date)}</span>
           </div>

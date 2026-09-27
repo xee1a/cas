@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import { PEOPLE } from '../people';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import T from '../components/T.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const photoOf = (p: string) => (p.startsWith('http') ? p : base + p.replace(/^\//, ''));
@@ -10,9 +11,9 @@ const photoOf = (p: string) => (p.startsWith('http') ? p : base + p.replace(/^\/
 <BaseLayout title="CAS Portfolios">
   <section class="portal wrap">
     <header class="portal-head">
-      <p class="tagline">IB Diploma Programme</p>
-      <h1>CAS Portfolios</h1>
-      <p class="lede">Creativity, Activity and Service. Reflections and evidence. Choose a portfolio.</p>
+      <p class="tagline"><T en="IB Diploma Programme" pl="Program IB Diploma" /></p>
+      <h1><T en="CAS Portfolios" pl="Portfolia CAS" /></h1>
+      <p class="lede"><T en="Creativity, Activity and Service. Reflections and evidence. Choose a portfolio." pl="Kreatywność, Aktywność i Służba. Refleksje i dowody. Wybierz portfolio." /></p>
     </header>
 
     <nav class="people" aria-label="People">
@@ -27,7 +28,7 @@ const photoOf = (p: string) => (p.startsWith('http') ? p : base + p.replace(/^\/
           </div>
           <div class="person-body">
             <span class="person-name">{person.name}</span>
-            <span class="person-meta">{person.tagline}</span>
+            <span class="person-meta"><T en={person.tagline} pl={person.taglinePl} /></span>
           </div>
           <span class="person-go" aria-hidden="true">&rarr;</span>
         </a>
