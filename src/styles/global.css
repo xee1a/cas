@@ -109,6 +109,14 @@ a { color: inherit; }
 }
 .nav a:hover { color: var(--text); }
 
+/* Header on small screens: brand row, then nav wraps on its own row */
+@media (max-width: 640px) {
+  .site-header .wrap { flex-wrap: wrap; row-gap: 10px; padding-top: 14px; padding-bottom: 14px; }
+  .brand { white-space: nowrap; font-size: 1rem; }
+  .nav { flex-basis: 100%; display: flex; flex-wrap: wrap; column-gap: 18px; row-gap: 4px; }
+  .nav a { margin-left: 0; font-size: 0.88rem; }
+}
+
 /* Hero */
 .hero { padding: 56px 0 24px; }
 .hero h1 {
