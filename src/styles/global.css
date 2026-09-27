@@ -72,9 +72,11 @@ body {
   pointer-events: none;
   opacity: 0.38;
 }
-/* The fluid effect is additive, so it washes out on pale backgrounds. */
-:root[data-theme='neutral'] #fx { opacity: 0.3; }
-:root[data-theme='light'] #fx { opacity: 0.16; }
+/* The fluid effect is additive (bright trails), so it shows on dark backgrounds
+   but washes out on pale ones. On light theme, multiply blending lets the
+   coloured trails darken the white instead of disappearing. */
+:root[data-theme='neutral'] #fx { opacity: 0.34; }
+:root[data-theme='light'] #fx { opacity: 0.7; mix-blend-mode: multiply; }
 
 .wrap {
   max-width: var(--maxw);
