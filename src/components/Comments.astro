@@ -1,0 +1,137 @@
+---
+import { FIREBASE_CONFIG } from '../firebase-config';
+interface Props { slug: string; name: string }
+const { slug, name } = Astro.props;
+---
+
+<section class="comments" aria-label={`Comments for ${name}`}>
+  <h2 class="comments-title">Notes for {name}</h2>
+  <p class="comments-sub" id={`csub-${slug}`}></p>
+
+  <form class="comment-form" id={`cform-${slug}`}>
+    <input class="c-name" type="text" maxlength="40" placeholder="Your name (optional)" aria-label="Your name" />
+    <textarea class="c-text" rows="3" maxlength="600" placeholder={`Leave a note for ${name}...`} aria-label="Your comment" required></textarea>
+    <div class="c-actions">
+      <button type="submit" class="c-submit">Post note</button>
+    </div>
+  </form>
+
+  <ol class="comment-list" id={`clist-${slug}`}></ol>
+</section>
+
+<style is:global>
+  .comments { margin: 48px auto 0; max-width: var(--maxw); border-top: 1px solid var(--border); padding-top: 30px; }
+  .comments-title { font-family: var(--serif); font-size: 1.5rem; margin: 0 0 4px; }
+  .comments-sub { color: var(--muted); font-size: 0.85rem; margin: 0 0 18px; }
+  .comment-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+  .comment-form input, .comment-form textarea {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; width: 100%; box-sizing: border-box; resize: vertical;
+  }
+  .comment-form input:focus, .comment-form textarea:focus { outline: none; border-color: var(--text); }
+  .c-actions { display: flex; justify-content: flex-end; }
+  .c-submit { font: inherit; cursor: pointer; border: 1px solid var(--text); background: var(--text); color: var(--bg); border-radius: 9px; padding: 9px 18px; }
+  .c-submit:hover { opacity: 0.9; }
+  .c-submit:disabled { opacity: 0.5; cursor: default; }
+  .comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+  .comment-item { border: 1px solid var(--border); border-radius: 11px; padding: 14px 16px; background: var(--surface); }
+  .comment-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+  .comment-author { font-weight: 600; font-size: 0.95rem; }
+  .comment-when { color: var(--muted); font-size: 0.78rem; }
+  .comment-body { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+  .comment-empty { color: var(--muted); font-size: 0.9rem; }
+</style>
+
+<script is:inline define:vars={{ FIREBASE_CONFIG, slug, name }}>
+  (function () {
+    const form = document.getElementById('cform-' + slug);
+    const listEl = document.getElementById('clist-' + slug);
+    const subEl = document.getElementById('csub-' + slug);
+    if (!form || !listEl) return;
+    const nameInput = form.querySelector('.c-name');
+    const textInput = form.querySelector('.c-text');
+    const submitBtn = form.querySelector('.c-submit');
+
+    const fmt = (ts) => {
+      try {
+        const d = new Date(ts);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
+          ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      } catch (e) { return ''; }
+    };
+
+    // Render safely: user text is set via textContent, never innerHTML.
+    function render(comments) {
+      listEl.innerHTML = '';
+      if (!comments.length) {
+        const li = document.createElement('li');
+        li.className = 'comment-empty';
+        li.textContent = 'No notes yet. Be the first to leave one.';
+        listEl.appendChild(li);
+        return;
+      }
+      comments.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      for (const c of comments) {
+        const li = document.createElement('li');
+        li.className = 'comment-item';
+        const head = document.createElement('div');
+        head.className = 'comment-head';
+        const author = document.createElement('span');
+        author.className = 'comment-author';
+        author.textContent = (c.name && String(c.name).trim()) || 'Anonymous';
+        const when = document.createElement('span');
+        when.className = 'comment-when';
+        when.textContent = c.ts ? fmt(c.ts) : '';
+        head.appendChild(author);
+        head.appendChild(when);
+        const body = document.createElement('p');
+        body.className = 'comment-body';
+        body.textContent = String(c.text || '');
+        li.appendChild(head);
+        li.appendChild(body);
+        listEl.appendChild(li);
+      }
+    }
+
+    let backend = null; // { add(comment) }
+
+    async function initFirebase(cfg) {
+      const appMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+      const dbMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+      const app = appMod.initializeApp(cfg, 'site-' + (cfg.projectId || 'app'));
+      const db = dbMod.getDatabase(app);
+      const listRef = dbMod.ref(db, 'comments/' + slug);
+      dbMod.onValue(listRef, (snap) => {
+        const val = snap.val() || {};
+        render(Object.values(val));
+      });
+      subEl.textContent = 'Notes are public and visible to everyone.';
+      return { add(c) { dbMod.push(listRef, c); } };
+    }
+
+    function initLocal() {
+      const KEY = 'comments_' + slug;
+      const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+      render(read());
+      subEl.textContent = 'Preview mode: notes are only saved in this browser until the owner connects the backend.';
+      return { add(c) { const all = read(); all.push(c); try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} render(all); } };
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = (textInput.value || '').trim();
+      if (!text || !backend) return;
+      submitBtn.disabled = true;
+      try {
+        await backend.add({ name: (nameInput.value || '').trim().slice(0, 40), text: text.slice(0, 600), ts: Date.now() });
+        textInput.value = '';
+      } catch (err) {}
+      submitBtn.disabled = false;
+    });
+
+    (async () => {
+      try { backend = FIREBASE_CONFIG ? await initFirebase(FIREBASE_CONFIG) : initLocal(); }
+      catch (e) { backend = initLocal(); }
+    })();
+  })();
+</script>

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import { STRANDS } from '../../content.config';
 import { PEOPLE, getPerson } from '../../people';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Comments from '../../components/Comments.astro';
 
 export async function getStaticPaths() {
   return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
@@ -56,5 +57,7 @@ const CAPTION: Record<string, string> = {
       <span aria-hidden="true">·</span>
       <a href={`${base}${person.slug}/progress/`}>Learning outcomes {covered}/7</a>
     </nav>
+
+    <Comments slug={person.slug} name={person.name} />
   </section>
 </BaseLayout>
