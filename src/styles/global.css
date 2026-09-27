@@ -1,37 +1,26 @@
 :root {
-  /* CAS strand accents — muted, editorial */
-  --creativity: #6f5aa0;
-  --activity: #3f7d6c;
-  --service: #b56637;
+  /* Always dark — the site uses a single dark theme for everyone,
+     regardless of the viewer's system light/dark setting. */
+  color-scheme: dark;
 
-  --bg: #faf8f4;
-  --surface: #ffffff;
-  --border: #e8e3da;
-  --text: #211e1a;
-  --muted: #736e64;
-  --accent: #211e1a;
-  --shadow: 0 1px 2px rgba(30, 25, 15, 0.05);
+  /* CAS strand accents — muted, editorial */
+  --creativity: #b3a3da;
+  --activity: #79c4b0;
+  --service: #d98f5f;
+
+  --bg: #14120f;
+  --surface: #1c1a16;
+  --border: #302c26;
+  --text: #efece5;
+  --muted: #9c968b;
+  --accent: #efece5;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 
   --radius: 10px;
   --maxw: 720px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14120f;
-    --surface: #1c1a16;
-    --border: #302c26;
-    --text: #efece5;
-    --muted: #9c968b;
-    --accent: #efece5;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --creativity: #b3a3da;
-    --activity: #79c4b0;
-    --service: #d98f5f;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -56,10 +45,6 @@ body {
   z-index: -1;
   pointer-events: none;
   opacity: 0.38;
-}
-/* The effect reads as neon on a dark canvas; keep it subtle in light mode */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) #fx { opacity: 0.24; }
 }
 
 .wrap {
