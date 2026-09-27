@@ -1,23 +1,18 @@
 // Single realtime backend for the whole site: powers cross-device 4-player chess
 // AND the visitor comments on each portfolio.
 //
-// Leave this null and both features run in "local preview" mode (visible only in
-// the current browser). To turn them on for real, across every visitor and device:
+// These values are safe to commit: Firebase web keys are public identifiers, not
+// secrets. Access is governed by the Realtime Database security rules.
 //
-//   1. Go to https://console.firebase.google.com and create a free project.
-//   2. In the project, open "Realtime Database" and create one (start in test mode).
-//   3. Project settings > "Your apps" > add a Web app, and copy its config object.
-//   4. Paste the fields below, then rebuild and push.
-//
-// The apiKey here is safe to commit: Firebase web keys are public identifiers, not
-// secrets. Access is governed by the database's security rules.
-//
-// Example:
-// export const FIREBASE_CONFIG = {
-//   apiKey: 'AIza...',
-//   authDomain: 'your-app.firebaseapp.com',
-//   databaseURL: 'https://your-app-default-rtdb.europe-west1.firebasedatabase.app',
-//   projectId: 'your-app',
-//   appId: '1:...:web:...',
-// };
-export const FIREBASE_CONFIG: Record<string, string> | null = null;
+// databaseURL is required for the Realtime Database and only appears once the
+// database is created (Build > Realtime Database). It follows the pattern
+// https://<projectId>-default-rtdb.<region>.firebasedatabase.app
+export const FIREBASE_CONFIG: Record<string, string> | null = {
+  apiKey: 'AIzaSyBbnMIJ_gtXxRaOMCYFb77CjIJd25hLJ94',
+  authDomain: 'komentarzecas.firebaseapp.com',
+  databaseURL: 'https://komentarzecas-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'komentarzecas',
+  storageBucket: 'komentarzecas.firebasestorage.app',
+  messagingSenderId: '390052272625',
+  appId: '1:390052272625:web:846b294049161131740c50',
+};
