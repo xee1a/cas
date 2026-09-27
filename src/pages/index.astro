@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import { PEOPLE } from '../people';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const photoOf = (p: string) => (p.startsWith('http') ? p : base + p.replace(/^\//, ''));
+---
+
+<BaseLayout title="CAS Portfolios">
+  <section class="portal wrap">
+    <header class="portal-head">
+      <p class="tagline">IB Diploma Programme</p>
+      <h1>CAS Portfolios</h1>
+      <p class="lede">Creativity, Activity and Service. Reflections and evidence. Choose a portfolio.</p>
+    </header>
+
+    <nav class="people" aria-label="People">
+      {PEOPLE.map((person) => (
+        <a class="person-card" href={`${base}${person.slug}/`}>
+          <div class="person-avatar" aria-hidden="true">
+            {person.photo ? (
+              <img src={photoOf(person.photo)} alt={person.name} />
+            ) : (
+              <span>{person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
+            )}
+          </div>
+          <div class="person-body">
+            <span class="person-name">{person.name}</span>
+            <span class="person-meta">{person.tagline}</span>
+          </div>
+          <span class="person-go" aria-hidden="true">&rarr;</span>
+        </a>
+      ))}
+    </nav>
+  </section>
+</BaseLayout>

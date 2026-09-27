@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import { STRANDS } from '../../../content.config';
+import { PEOPLE } from '../../../people';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostList from '../../../components/PostList.astro';
+
+export async function getStaticPaths() {
+  return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
+}
+
+const { person } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const posts = (
+  await getCollection('reflections', ({ data }) => !data.draft && data.person === person.slug)
+).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title={`All experiences · ${person.name}`} person={person}>
+  <section class="wrap listing">
+    <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
+    <h1 class="listing-title">All experiences</h1>
+
+    <div class="filters">
+      <button class="filter-btn active" data-strand="all">All</button>
+      {STRANDS.map((s) => (
+        <button class="filter-btn" data-strand={s}>{s}</button>
+      ))}
+    </div>
+
+    <PostList posts={posts} person={person.slug} />
+  </section>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+  const items = document.querySelectorAll<HTMLLIElement>('.post-item');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const strand = btn.dataset.strand;
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      items.forEach((item) => {
+        const strands = (item.dataset.strands ?? '').split(',');
+        item.style.display = strand === 'all' || strands.includes(strand!) ? '' : 'none';
+      });
+    });
+  });
+</script>

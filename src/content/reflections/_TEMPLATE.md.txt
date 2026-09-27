@@ -1,0 +1,37 @@
+---
+title: "Experience title"
+person: aleksander              # whose portfolio — slug from src/people.ts
+date: 2026-01-01
+strands: ["Creativity"]          # one or more: Creativity / Activity / Service
+learningOutcomes: [1, 4]         # which LOs it covers (1-7)
+summary: "One or two sentences shown in the list."
+tags: ["tag1", "tag2"]           # optional
+hours: 5                          # optional, number of CAS hours
+draft: false                     # true = don't publish yet
+# --- Evidence (optional) ---
+# Photos: put files in public/images/<name>_<strand>/
+gallery:
+  - src: /images/alex_creativity/photo-name.jpg
+    caption: "Photo caption"
+# PDF documents: put files in public/files/
+attachments:
+  - src: /files/document-name.pdf
+    label: "Name shown on the page"
+---
+
+## Before I started
+What was the goal? What did you plan? (good place for LO3 — planning)
+
+## What I did
+Concrete actions, how the experience went.
+
+## Reflection
+What went well/badly? What did you learn? What were the challenges (LO2, LO4)?
+How does it connect to the learning outcomes you tagged above?
+
+<!--
+  To add a new entry: copy this file as e.g. "my-entry.md"
+  (extension .md, NOT .md.txt), change the frontmatter and write.
+  Photos go in public/images/<name>_<strand>/ and are linked as
+  "/images/<name>_<strand>/file.jpg".
+-->

@@ -1,0 +1,183 @@
+---
+// Karta w stylu Apple Fitness. Zawsze na czarnym tle (jak prawdziwa apka),
+// niezaleznie od motywu strony.
+interface Workout {
+  date: string;
+  distance: number; // metry
+  duration: string;
+  pace?: string;
+  calories?: number;
+  avgHr?: number;
+}
+interface Rings {
+  move: number; moveGoal: number;
+  exercise: number; exerciseGoal: number;
+  stand: number; standGoal: number;
+}
+interface Props {
+  activity?: string;
+  rings?: Rings;
+  workouts?: Workout[];
+}
+
+const { activity = 'Pływanie', rings, workouts = [] } = Astro.props;
+
+// --- podsumowanie sesji (dowod: laczny dystans i czas) ---
+const totalMeters = workouts.reduce((s, w) => s + w.distance, 0);
+const totalKm = totalMeters / 1000;
+const sessions = workouts.length;
+
+const toSeconds = (t: string) => {
+  const p = t.split(':').map(Number);
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : (p[0] ?? 0) * 60 + (p[1] ?? 0);
+};
+const totalSecs = workouts.reduce((s, w) => s + toSeconds(w.duration), 0);
+const totalTimeH = Math.floor(totalSecs / 3600);
+const totalTimeM = Math.round((totalSecs % 3600) / 60);
+const totalCal = workouts.reduce((s, w) => s + (w.calories ?? 0), 0);
+
+const fmtDist = (m: number) =>
+  m >= 1000 ? `${(m / 1000).toLocaleString('en-GB', { maximumFractionDigits: 2 })} km` : `${m} m`;
+
+// najnowsza sesja do kafelkow "ostatni trening"
+const latest = workouts[0];
+
+// --- pierscienie ---
+const R = { move: 82, exercise: 60, stand: 38 };
+const SW = 15;
+const circ = (r: number) => 2 * Math.PI * r;
+const dash = (r: number, val: number, goal: number) => {
+  const pct = goal > 0 ? Math.min(val / goal, 1) : 0;
+  return `${circ(r) * pct} ${circ(r) * (1 - pct) + circ(r)}`;
+};
+---
+
+<div class="af">
+  <div class="af-head">
+    <span class="af-dot"></span>
+    <span class="af-title">{activity} · Summary</span>
+  </div>
+
+  {rings && (
+    <div class="af-rings-row">
+      <svg class="af-rings" viewBox="0 0 200 200" role="img" aria-label="Activity rings">
+        <g transform="rotate(-90 100 100)">
+          {(['move', 'exercise', 'stand'] as const).map((k) => (
+            <>
+              <circle cx="100" cy="100" r={R[k]} fill="none" stroke-width={SW}
+                class={`af-track af-${k}`} />
+              <circle cx="100" cy="100" r={R[k]} fill="none" stroke-width={SW}
+                stroke-linecap="round" class={`af-arc af-${k}`}
+                stroke-dasharray={dash(R[k], rings[k], rings[`${k}Goal` as keyof Rings])} />
+            </>
+          ))}
+        </g>
+      </svg>
+      <ul class="af-legend">
+        <li class="af-move"><b>Move</b><span>{rings.move}<i>/{rings.moveGoal} kcal</i></span></li>
+        <li class="af-exercise"><b>Exercise</b><span>{rings.exercise}<i>/{rings.exerciseGoal} min</i></span></li>
+        <li class="af-stand"><b>Stand</b><span>{rings.stand}<i>/{rings.standGoal} h</i></span></li>
+      </ul>
+    </div>
+  )}
+
+  {latest && (
+    <>
+      <div class="af-section-label">Latest workout</div>
+      <div class="af-tiles">
+        <div class="af-tile"><span class="af-lbl">Distance</span><span class="af-val v-green">{fmtDist(latest.distance)}</span></div>
+        <div class="af-tile"><span class="af-lbl">Time</span><span class="af-val">{latest.duration}</span></div>
+        {latest.pace && <div class="af-tile"><span class="af-lbl">Avg pace</span><span class="af-val">{latest.pace}</span></div>}
+        {latest.calories != null && <div class="af-tile"><span class="af-lbl">Calories</span><span class="af-val v-move">{latest.calories}<i> kcal</i></span></div>}
+        {latest.avgHr != null && <div class="af-tile"><span class="af-lbl">Avg HR</span><span class="af-val v-hr">{latest.avgHr}<i> bpm</i></span></div>}
+      </div>
+    </>
+  )}
+
+  {sessions > 0 && (
+    <>
+      <div class="af-section-label">Swim log <span class="af-count">{sessions} sessions</span></div>
+      <div class="af-log">
+        {workouts.map((w) => (
+          <div class="af-log-row">
+            <span class="af-log-date">{w.date}</span>
+            <span class="af-log-dist v-green">{fmtDist(w.distance)}</span>
+            <span class="af-log-time">{w.duration}</span>
+          </div>
+        ))}
+      </div>
+      <div class="af-totals">
+        <div><span class="af-t-num v-green">{totalKm.toLocaleString('en-GB', { maximumFractionDigits: 1 })}</span><span class="af-t-lbl">km total</span></div>
+        <div><span class="af-t-num">{totalTimeH > 0 ? `${totalTimeH}h ` : ''}{totalTimeM}m</span><span class="af-t-lbl">in the water</span></div>
+        {totalCal > 0 && <div><span class="af-t-num v-move">{totalCal.toLocaleString('en-GB')}</span><span class="af-t-lbl">kcal</span></div>}
+      </div>
+    </>
+  )}
+</div>
+
+<style>
+  .af {
+    background: #000;
+    color: #fff;
+    border-radius: 22px;
+    padding: 22px;
+    margin: 28px 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  }
+  .af-head { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+  .af-dot { width: 9px; height: 9px; border-radius: 50%; background: #30d158; box-shadow: 0 0 10px #30d158; }
+  .af-title { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em; color: #98989f; text-transform: uppercase; }
+
+  /* Pierscienie */
+  .af-rings-row { display: flex; align-items: center; gap: 26px; margin-bottom: 6px; }
+  .af-rings { width: 168px; height: 168px; flex-shrink: 0; }
+  .af-track { opacity: 0.22; }
+  .af-arc { transition: stroke-dasharray 0.6s ease; }
+  .af-track.af-move, .af-arc.af-move { stroke: #fa114f; }
+  .af-track.af-exercise, .af-arc.af-exercise { stroke: #a2f70d; }
+  .af-track.af-stand, .af-arc.af-stand { stroke: #21e7ea; }
+
+  .af-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .af-legend li { display: flex; flex-direction: column; line-height: 1.15; }
+  .af-legend b { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .af-legend span { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .af-legend i { font-size: 0.8rem; font-weight: 500; font-style: normal; color: #98989f; }
+  .af-legend .af-move b { color: #fa114f; }
+  .af-legend .af-exercise b { color: #a2f70d; }
+  .af-legend .af-stand b { color: #21e7ea; }
+
+  /* Etykiety sekcji */
+  .af-section-label {
+    font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #98989f; margin: 22px 0 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .af-count { color: #636366; font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+  /* Kafelki metryk */
+  .af-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; }
+  .af-tile { background: #1c1c1e; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+  .af-lbl { font-size: 0.72rem; color: #98989f; font-weight: 500; }
+  .af-val { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .af-val i { font-size: 0.72rem; font-weight: 500; font-style: normal; color: #98989f; }
+  .v-green { color: #30d158; }
+  .v-move { color: #fa114f; }
+  .v-hr { color: #ff375f; }
+
+  /* Dziennik */
+  .af-log { display: grid; gap: 1px; background: #1c1c1e; border-radius: 14px; overflow: hidden; }
+  .af-log-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 11px 15px; background: #1c1c1e; }
+  .af-log-date { color: #d1d1d6; font-size: 0.92rem; }
+  .af-log-dist { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .af-log-time { color: #98989f; font-size: 0.9rem; font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+
+  /* Sumy */
+  .af-totals { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 16px; padding: 16px 4px 4px; border-top: 1px solid #2c2c2e; }
+  .af-t-num { display: block; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .af-t-lbl { font-size: 0.74rem; color: #98989f; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  @media (max-width: 460px) {
+    .af-rings-row { flex-direction: column; gap: 16px; align-items: flex-start; }
+    .af-legend { grid-template-columns: repeat(3, auto); gap: 18px; }
+  }
+</style>

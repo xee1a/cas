@@ -1,0 +1,77 @@
+---
+title: "Swimming"
+date: 2026-09-25
+person: aleksander
+strands: ["Activity"]
+learningOutcomes: [1, 4]
+summary: "Regular swimming, with every session tracked on my Apple Watch."
+tags: ["sport", "swimming", "perseverance"]
+hours: 0
+# Evidence: pool pass + Apple Fitness screenshots
+gallery:
+  - src: /images/alex_activity/karnet.jpg
+    caption: "Pool pass"
+  - src: /images/alex_activity/sep15.png
+    caption: "15 Sep"
+  - src: /images/alex_activity/sep17.png
+    caption: "17 Sep"
+  - src: /images/alex_activity/sep19.png
+    caption: "19 Sep"
+  - src: /images/alex_activity/sep21.png
+    caption: "21 Sep"
+  - src: /images/alex_activity/sep23.png
+    caption: "23 Sep"
+  - src: /images/alex_activity/sep25.png
+    caption: "25 Sep"
+# Real data from Apple Watch (Pool Swim summaries)
+fitness:
+  activity: "Swimming"
+  workouts:
+    - date: "25 Sep"
+      distance: 1250
+      duration: "36:42"
+      pace: "2:58 /100m"
+      calories: 507
+      avgHr: 141
+    - date: "23 Sep"
+      distance: 1275
+      duration: "49:56"
+      pace: "3:53 /100m"
+      calories: 517
+      avgHr: 138
+    - date: "21 Sep"
+      distance: 1300
+      duration: "35:54"
+      pace: "2:45 /100m"
+      calories: 470
+      avgHr: 153
+    - date: "19 Sep"
+      distance: 1275
+      duration: "39:06"
+      pace: "3:03 /100m"
+      calories: 461
+      avgHr: 153
+    - date: "17 Sep"
+      distance: 1225
+      duration: "46:44"
+      pace: "3:49 /100m"
+      calories: 499
+      avgHr: 152
+    - date: "15 Sep"
+      distance: 1000
+      duration: "46:32"
+      pace: "4:39 /100m"
+      calories: 417
+      avgHr: 145
+---
+
+## Goal
+I try my best to swim at least 1 km, three times a week. I track every session
+on my Apple Watch, so I can see my distance, pace and heart rate. The summary
+below is pulled straight from those workouts.
+
+## Reflection
+<!-- LO4 (commitment / perseverance): how do you keep the 3x-a-week routine going,
+     even when you don't feel like it?
+     LO1 (strengths / growth): what does the data show about your progress — how
+     have your pace, heart rate and distance changed since 15 Sep? -->

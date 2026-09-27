@@ -1,0 +1,59 @@
+---
+import { getCollection } from 'astro:content';
+import { LEARNING_OUTCOMES } from '../../content.config';
+import { PEOPLE } from '../../people';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  return PEOPLE.map((person) => ({ params: { person: person.slug }, props: { person } }));
+}
+
+const { person } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const posts = await getCollection(
+  'reflections',
+  ({ data }) => !data.draft && data.person === person.slug
+);
+
+const loCounts: Record<number, number> = {};
+for (let i = 1; i <= 7; i++) loCounts[i] = 0;
+for (const p of posts) for (const lo of p.data.learningOutcomes) loCounts[lo]++;
+const covered = Object.values(loCounts).filter((c) => c > 0).length;
+const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
+---
+
+<BaseLayout title={`Progress · ${person.name}`} person={person}>
+  <section class="wrap listing">
+    <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
+    <h1 class="listing-title">Learning Outcomes progress</h1>
+
+    <div class="tracker">
+      <p class="sub">
+        {covered} / 7 covered. To complete CAS you need all seven.
+        <a class="lo-link" href={`${base}learning-outcomes/`}>What are they?</a>
+      </p>
+      <div class="lo-grid">
+        {Object.entries(LEARNING_OUTCOMES).map(([num, text]) => {
+          const n = Number(num);
+          const c = loCounts[n];
+          return (
+            <div class={`lo-row ${c > 0 ? 'covered' : ''}`}>
+              <div class="lo-badge">LO{n}</div>
+              <div class="lo-text">
+                {text}
+                <span class="count"> · {c > 0 ? `${c} ${c === 1 ? 'experience' : 'experiences'}` : 'none yet'}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div class="summary-stats">
+        <div class="stat"><div class="num">{posts.length}</div><div class="label">Experiences</div></div>
+        <div class="stat"><div class="num">{covered}/7</div><div class="label">Learning Outcomes</div></div>
+        {totalHours > 0 && (
+          <div class="stat"><div class="num">{totalHours}</div><div class="label">CAS hours</div></div>
+        )}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,34 @@
+---
+import { LEARNING_OUTCOMES_FULL } from '../learning-outcomes';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<BaseLayout title="Learning Outcomes · CAS">
+  <section class="lo-page wrap">
+    <a class="back-link" href={base}>&larr; Portfolios</a>
+    <header class="lo-intro">
+      <p class="tagline">CAS · IB Diploma Programme</p>
+      <h1>The 7 Learning Outcomes</h1>
+      <p class="lede">
+        To complete CAS, a student must show evidence for all seven learning
+        outcomes across their Creativity, Activity and Service experiences. Here's
+        what each one means.
+      </p>
+    </header>
+
+    <ol class="lo-cards">
+      {LEARNING_OUTCOMES_FULL.map((lo) => (
+        <li class="lo-card">
+          <div class="lo-num">LO{lo.n}</div>
+          <div class="lo-content">
+            <h2>{lo.title}</h2>
+            <p class="lo-plain">{lo.plain}</p>
+            <p class="lo-how"><span>How you show it</span>{lo.how}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+</BaseLayout>

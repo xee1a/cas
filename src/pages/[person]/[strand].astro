@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import { STRANDS } from '../../content.config';
+import { PEOPLE } from '../../people';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+
+export async function getStaticPaths() {
+  return PEOPLE.flatMap((person) =>
+    STRANDS.map((s) => ({
+      params: { person: person.slug, strand: s.toLowerCase() },
+      props: { person, strand: s },
+    }))
+  );
+}
+
+const { person, strand } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const posts = (
+  await getCollection(
+    'reflections',
+    ({ data }) => !data.draft && data.person === person.slug && data.strands.includes(strand as any)
+  )
+).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const CAPTION: Record<string, string> = {
+  Creativity: 'Art, projects, making',
+  Activity: 'Sport, movement, effort',
+  Service: 'Volunteering, helping others',
+};
+---
+
+<BaseLayout title={`${strand} · ${person.name}`} person={person}>
+  <section class={`strand-page wrap ${strand}`}>
+    <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
+    <header class="strand-header">
+      <span class={`chip ${strand}`}>{strand}</span>
+      <h1>{strand}</h1>
+      <p>{CAPTION[strand]}</p>
+    </header>
+    <PostList posts={posts} person={person.slug} />
+  </section>
+</BaseLayout>

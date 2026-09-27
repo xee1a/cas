@@ -1,0 +1,123 @@
+---
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import type { Person } from '../people';
+
+interface Props {
+  title: string;
+  description?: string;
+  person?: Person; // when set, the header is scoped to that person's portfolio
+}
+
+const { title, description = 'CAS Portfolio. Creativity, Activity, Service (IB Diploma Programme).', person } =
+  Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const home = person ? `${base}${person.slug}/` : base;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap"
+    />
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <canvas id="fx" aria-hidden="true" transition:persist></canvas>
+    <header class="site-header">
+      <div class="wrap">
+        <div class="header-left">
+          <a class="home-icon" href={base} aria-label="All portfolios">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.7 12 3l9 7.7" />
+              <path d="M5 9.6V20h5v-6h4v6h5V9.6" />
+            </svg>
+          </a>
+          {person ? (
+            <a class="brand" href={home}>{person.name} <span>· CAS</span></a>
+          ) : (
+            <a class="brand" href={base}>CAS Portfolios</a>
+          )}
+        </div>
+        <nav class="nav">
+          {person && <a href={`${base}${person.slug}/reflections/`}>Experiences</a>}
+          {person && <a href={`${base}${person.slug}/progress/`}>Progress</a>}
+          <a href={`${base}learning-outcomes/`}>Learning Outcomes</a>
+          <a href={base}>Portfolios</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        CAS Portfolio · IB Diploma Programme · Creativity · Activity · Service
+      </div>
+    </footer>
+
+    <script>
+      // WebGL fluid simulation that swirls under the cursor (decorative background).
+      import fluidCursor from 'webgl-fluid';
+
+      const w = window as any;
+      const canvas = document.getElementById('fx') as HTMLCanvasElement | null;
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // The canvas persists across view-transition navigations, so init only once.
+      if (canvas && !reduce && !w.__fxInit) {
+        w.__fxInit = true;
+        try {
+          fluidCursor(canvas, {
+            TRIGGER: 'hover',
+            IMMEDIATE: false,
+            AUTO: false,
+            SIM_RESOLUTION: 128,
+            DYE_RESOLUTION: 1024,
+            DENSITY_DISSIPATION: 5.5,
+            VELOCITY_DISSIPATION: 2.5,
+            PRESSURE: 0.8,
+            PRESSURE_ITERATIONS: 20,
+            CURL: 26,
+            SPLAT_RADIUS: 0.14,
+            SPLAT_FORCE: 5200,
+            SHADING: true,
+            COLORFUL: true,
+            COLOR_UPDATE_SPEED: 10,
+            TRANSPARENT: true,
+            BACK_COLOR: { r: 0, g: 0, b: 0 },
+            BLOOM: true,
+            BLOOM_INTENSITY: 0.4,
+            SUNRAYS: false,
+          });
+
+          // The canvas sits behind the page (pointer-events: none), so forward the
+          // window's pointer position to it. The canvas is full-viewport at (0,0),
+          // so offsetX/offsetY equal clientX/clientY.
+          const forward = (type: string, x: number, y: number) => {
+            const ev = new MouseEvent(type, { clientX: x, clientY: y, bubbles: false });
+            Object.defineProperty(ev, 'offsetX', { value: x });
+            Object.defineProperty(ev, 'offsetY', { value: y });
+            canvas.dispatchEvent(ev);
+          };
+          window.addEventListener('pointerdown', (e) => forward('mousedown', e.clientX, e.clientY), { passive: true });
+          window.addEventListener('pointermove', (e) => forward('mousemove', e.clientX, e.clientY), { passive: true });
+        } catch (err) {
+          // WebGL unavailable — no background effect, page works normally.
+        }
+      }
+    </script>
+  </body>
+</html>
