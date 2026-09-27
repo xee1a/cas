@@ -310,6 +310,8 @@ a { color: inherit; }
 
 /* Footer */
 .site-footer { border-top: 1px solid var(--border); padding: 32px 0; color: var(--muted); font-size: 0.85rem; }
+/* Hidden easter egg: looks like the surrounding footer text */
+.site-footer .egg { color: inherit; text-decoration: none; cursor: text; }
 
 .empty { color: var(--muted); padding: 40px 0; text-align: center; }
 
