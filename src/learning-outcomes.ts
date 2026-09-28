@@ -22,7 +22,7 @@ export const LEARNING_OUTCOMES_FULL: LO[] = [
   },
   {
     n: 2,
-    title: 'Demonstrate that challenges have been undertaken, developing new skills',
+    title: 'Demonstrate that challenges have been undertaken, developing new skills in the process',
     titlePl: 'Podejmowanie wyzwań i rozwijanie nowych umiejętności',
     plain: 'Take on something that is actually difficult for you, and pick up new skills along the way.',
     plainPl: 'Podejmij się czegoś, co jest dla ciebie naprawdę trudne, i zdobądź przy tym nowe umiejętności.',
@@ -49,7 +49,7 @@ export const LEARNING_OUTCOMES_FULL: LO[] = [
   },
   {
     n: 5,
-    title: 'Demonstrate the skills and recognise the benefits of working collaboratively',
+    title: 'Demonstrate the skills and recognize the benefits of working collaboratively',
     titlePl: 'Umiejętność współpracy i dostrzeganie korzyści z pracy zespołowej',
     plain: 'Work well with other people, and understand why teamwork made the outcome better.',
     plainPl: 'Dobrze współpracuj z innymi i rozumiej, dlaczego praca zespołowa poprawiła efekt.',
@@ -67,7 +67,7 @@ export const LEARNING_OUTCOMES_FULL: LO[] = [
   },
   {
     n: 7,
-    title: 'Recognise and consider the ethics of choices and actions',
+    title: 'Recognize and consider the ethics of choices and actions',
     titlePl: 'Rozpoznawanie i rozważanie etyki wyborów i działań',
     plain: 'Think about the right and wrong of what you do, and act responsibly.',
     plainPl: 'Myśl o tym, co dobre i złe w tym, co robisz, i postępuj odpowiedzialnie.',

@@ -7,12 +7,12 @@ export const STRANDS = ['Creativity', 'Activity', 'Service'] as const;
 // 7 CAS Learning Outcomes (LO1-LO7) - oficjalne IB
 export const LEARNING_OUTCOMES: Record<number, string> = {
   1: 'Identify own strengths and develop areas for growth',
-  2: 'Demonstrate that challenges have been undertaken, developing new skills',
+  2: 'Demonstrate that challenges have been undertaken, developing new skills in the process',
   3: 'Demonstrate how to initiate and plan a CAS experience',
   4: 'Show commitment to and perseverance in CAS experiences',
-  5: 'Demonstrate the skills and recognise the benefits of working collaboratively',
+  5: 'Demonstrate the skills and recognize the benefits of working collaboratively',
   6: 'Demonstrate engagement with issues of global significance',
-  7: 'Recognise and consider the ethics of choices and actions',
+  7: 'Recognize and consider the ethics of choices and actions',
 };
 
 const reflections = defineCollection({
