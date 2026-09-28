@@ -35,17 +35,25 @@ const posts = (
 </BaseLayout>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
-  const items = document.querySelectorAll<HTMLLIElement>('.post-item');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const strand = btn.dataset.strand;
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      items.forEach((item) => {
+  // Re-run on every view-transition navigation; re-filter when live entries arrive.
+  document.addEventListener('astro:page-load', () => {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+    if (!buttons.length) return;
+    let strand = 'all';
+    const apply = () => {
+      document.querySelectorAll<HTMLLIElement>('.post-item').forEach((item) => {
         const strands = (item.dataset.strands ?? '').split(',');
-        item.style.display = strand === 'all' || strands.includes(strand!) ? '' : 'none';
+        item.style.display = strand === 'all' || strands.includes(strand) ? '' : 'none';
+      });
+    };
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        strand = btn.dataset.strand!;
+        buttons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        apply();
       });
     });
+    document.querySelector('ul[data-live-person]')?.addEventListener('live-posts', apply);
   });
 </script>

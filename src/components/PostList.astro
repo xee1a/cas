@@ -6,38 +6,67 @@ import { STRAND_PL } from '../i18n';
 interface Props {
   posts: CollectionEntry<'reflections'>[];
   person: string; // slug, for building links
+  strand?: string; // when set, only live entries from this strand are merged in
 }
-const { posts, person } = Astro.props;
+const { posts, person, strand = '' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 const fmtDate = (d: Date) =>
   d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
-{posts.length === 0 ? (
-  <p class="empty"><T en="No experiences here yet." pl="Jeszcze nie ma tu doświadczeń." /></p>
-) : (
-  <ul class="posts">
-    {posts.map((post) => (
-      <li class="post-item" data-strands={post.data.strands.join(',')}>
-        <a class="post-card" href={`${base}${person}/reflections/${post.id}/`}>
-          <div class="post-meta">
-            {post.data.strands.map((s) => (
-              <span class={`chip ${s}`}><T en={s} pl={STRAND_PL[s]} /></span>
+<p class="empty" hidden={posts.length > 0}><T en="No experiences here yet." pl="Jeszcze nie ma tu doświadczeń." /></p>
+<ul class="posts" data-live-person={person} data-live-strand={strand}>
+  {posts.map((post) => (
+    <li class="post-item" data-strands={post.data.strands.join(',')} data-date={isoDate(post.data.date)}>
+      <a class="post-card" href={`${base}${person}/reflections/${post.id}/`}>
+        <div class="post-meta">
+          {post.data.strands.map((s) => (
+            <span class={`chip ${s}`}><T en={s} pl={STRAND_PL[s]} /></span>
+          ))}
+          <span class="post-date">{fmtDate(post.data.date)}</span>
+        </div>
+        <h3 class="post-title">{post.data.title}</h3>
+        {post.data.summary && <p class="post-summary">{post.data.summary}</p>}
+        {post.data.learningOutcomes.length > 0 && (
+          <div class="lo-tags">
+            {post.data.learningOutcomes.sort((a, b) => a - b).map((lo) => (
+              <span class="lo-tag">LO{lo}</span>
             ))}
-            <span class="post-date">{fmtDate(post.data.date)}</span>
           </div>
-          <h3 class="post-title">{post.data.title}</h3>
-          {post.data.summary && <p class="post-summary">{post.data.summary}</p>}
-          {post.data.learningOutcomes.length > 0 && (
-            <div class="lo-tags">
-              {post.data.learningOutcomes.sort((a, b) => a - b).map((lo) => (
-                <span class="lo-tag">LO{lo}</span>
-              ))}
-            </div>
-          )}
-        </a>
-      </li>
-    ))}
-  </ul>
-)}
+        )}
+      </a>
+    </li>
+  ))}
+</ul>
+
+<script>
+  // Merge entries added via /panel/ (Firebase) into the static list, newest first.
+  import { fetchPosts, postCard } from '../lib/live';
+
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLUListElement>('ul[data-live-person]').forEach(async (ul) => {
+      if (ul.dataset.liveLoaded) return;
+      ul.dataset.liveLoaded = '1';
+      const strand = ul.dataset.liveStrand;
+      let posts;
+      try {
+        posts = await fetchPosts(ul.dataset.livePerson!);
+      } catch {
+        return; // offline / Firebase down: static entries still show
+      }
+      for (const p of posts) {
+        if (strand && p.strand !== strand) continue;
+        const li = postCard(p);
+        const before = [...ul.children].find((c) => ((c as HTMLElement).dataset.date ?? '') < p.date);
+        ul.insertBefore(li, before ?? null);
+      }
+      if (ul.children.length) {
+        const empty = ul.previousElementSibling;
+        if (empty?.classList.contains('empty')) (empty as HTMLElement).hidden = true;
+      }
+      ul.dispatchEvent(new CustomEvent('live-posts', { bubbles: true }));
+    });
+  });
+</script>

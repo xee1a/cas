@@ -36,12 +36,12 @@ const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
     <a class="back-link" href={`${base}${person.slug}/`}>&larr; {person.name}</a>
     <h1 class="listing-title"><T en="Learning Outcomes progress" pl="Postępy w efektach uczenia się" /></h1>
 
-    <div class="tracker">
+    <div class="tracker" data-live-progress={person.slug}>
       <p class="sub">
-        <T
+        <span data-covered-line><T
           en={`${covered} / 7 covered. To complete CAS you need all seven.`}
           pl={`${covered} / 7 pokrytych. Aby ukończyć CAS, potrzebujesz wszystkich siedmiu.`}
-        />
+        /></span>
         <a class="lo-link" href={`${base}learning-outcomes/`}><T en="What are they?" pl="Czym one są?" /></a>
       </p>
       <div class="lo-grid">
@@ -49,11 +49,11 @@ const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
           const n = Number(num);
           const c = loCounts[n];
           return (
-            <div class={`lo-row ${c > 0 ? 'covered' : ''}`}>
+            <div class={`lo-row ${c > 0 ? 'covered' : ''}`} data-lo={n} data-count={c}>
               <div class="lo-badge">LO{n}</div>
               <div class="lo-text">
                 <T en={text} pl={LEARNING_OUTCOMES_PL[n]} />
-                <span class="count"> · <T
+                <span class="count" data-count-label> · <T
                   en={c > 0 ? `${c} ${c === 1 ? 'experience' : 'experiences'}` : 'none yet'}
                   pl={c > 0 ? `${c} ${plExp(c)}` : 'jeszcze brak'}
                 /></span>
@@ -63,12 +63,63 @@ const totalHours = posts.reduce((sum, p) => sum + (p.data.hours ?? 0), 0);
         })}
       </div>
       <div class="summary-stats">
-        <div class="stat"><div class="num">{posts.length}</div><div class="label"><T en="Experiences" pl="Doświadczenia" /></div></div>
-        <div class="stat"><div class="num">{covered}/7</div><div class="label"><T en="Learning Outcomes" pl="Efekty uczenia się" /></div></div>
-        {totalHours > 0 && (
-          <div class="stat"><div class="num">{totalHours}</div><div class="label"><T en="CAS hours" pl="Godziny CAS" /></div></div>
-        )}
+        <div class="stat"><div class="num" data-stat="experiences">{posts.length}</div><div class="label"><T en="Experiences" pl="Doświadczenia" /></div></div>
+        <div class="stat"><div class="num" data-stat="covered">{covered}/7</div><div class="label"><T en="Learning Outcomes" pl="Efekty uczenia się" /></div></div>
+        <div class="stat" hidden={totalHours === 0} data-stat-box="hours"><div class="num" data-stat="hours">{totalHours}</div><div class="label"><T en="CAS hours" pl="Godziny CAS" /></div></div>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // Add entries from /panel/ (Firebase) to the static counts.
+  import { fetchPosts, parseLos, t } from '../../lib/live';
+
+  const plExp = (c: number) => {
+    if (c === 1) return 'doświadczenie';
+    const m10 = c % 10, m100 = c % 100;
+    return m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14) ? 'doświadczenia' : 'doświadczeń';
+  };
+
+  document.addEventListener('astro:page-load', async () => {
+    const tracker = document.querySelector<HTMLElement>('[data-live-progress]');
+    if (!tracker || tracker.dataset.liveLoaded) return;
+    tracker.dataset.liveLoaded = '1';
+    let posts;
+    try {
+      posts = await fetchPosts(tracker.dataset.liveProgress!);
+    } catch {
+      return;
+    }
+    if (!posts.length) return;
+
+    const rows = [...tracker.querySelectorAll<HTMLElement>('[data-lo]')];
+    for (const p of posts) {
+      for (const n of parseLos(p.los)) {
+        const row = rows.find((r) => r.dataset.lo === String(n));
+        if (row) row.dataset.count = String(Number(row.dataset.count) + 1);
+      }
+    }
+    let covered = 0;
+    for (const row of rows) {
+      const c = Number(row.dataset.count);
+      if (c > 0) covered++;
+      row.classList.toggle('covered', c > 0);
+      const label = row.querySelector('[data-count-label]')!;
+      label.replaceChildren(' · ', t(
+        c > 0 ? `${c} ${c === 1 ? 'experience' : 'experiences'}` : 'none yet',
+        c > 0 ? `${c} ${plExp(c)}` : 'jeszcze brak'
+      ));
+    }
+    tracker.querySelector('[data-covered-line]')!.replaceChildren(t(
+      `${covered} / 7 covered. To complete CAS you need all seven.`,
+      `${covered} / 7 pokrytych. Aby ukończyć CAS, potrzebujesz wszystkich siedmiu.`
+    ));
+    const stat = (k: string) => tracker.querySelector<HTMLElement>(`[data-stat="${k}"]`)!;
+    stat('experiences').textContent = String(Number(stat('experiences').textContent) + posts.length);
+    stat('covered').textContent = `${covered}/7`;
+    const hours = Number(stat('hours').textContent) + posts.reduce((s, p) => s + (p.hours ?? 0), 0);
+    stat('hours').textContent = String(Math.round(hours * 10) / 10);
+    tracker.querySelector<HTMLElement>('[data-stat-box="hours"]')!.hidden = hours === 0;
+  });
+</script>

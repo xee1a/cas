@@ -36,6 +36,6 @@ const posts = (
       <h1><T en={strand} pl={STRAND_PL[strand]} /></h1>
       <p><T en={STRAND_SUB_EN[strand]} pl={STRAND_SUB_PL[strand]} /></p>
     </header>
-    <PostList posts={posts} person={person.slug} />
+    <PostList posts={posts} person={person.slug} strand={strand} />
   </section>
 </BaseLayout>

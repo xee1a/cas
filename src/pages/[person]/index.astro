@@ -23,7 +23,8 @@ const posts = await getCollection(
   'reflections',
   ({ data }) => !data.draft && data.person === person.slug
 );
-const covered = new Set(posts.flatMap((p) => p.data.learningOutcomes)).size;
+const coveredLos = new Set(posts.flatMap((p) => p.data.learningOutcomes));
+const covered = coveredLos.size;
 
 ---
 
@@ -52,9 +53,25 @@ const covered = new Set(posts.flatMap((p) => p.data.learningOutcomes)).size;
     <nav class="home-links">
       <a href={`${base}${person.slug}/reflections/`}><T en="All experiences" pl="Wszystkie doświadczenia" /></a>
       <span aria-hidden="true">·</span>
-      <a href={`${base}${person.slug}/progress/`}><T en="Learning outcomes" pl="Efekty uczenia się" /> {covered}/7</a>
+      <a href={`${base}${person.slug}/progress/`}><T en="Learning outcomes" pl="Efekty uczenia się" /> <span data-live-los={person.slug} data-static-los={[...coveredLos].join(',')}>{covered}</span>/7</a>
     </nav>
 
     <Comments slug={person.slug} name={person.name} />
   </section>
 </BaseLayout>
+
+<script>
+  // Include entries from /panel/ (Firebase) in the "Learning outcomes x/7" count.
+  import { fetchPosts, parseLos } from '../../lib/live';
+
+  document.addEventListener('astro:page-load', async () => {
+    const el = document.querySelector<HTMLElement>('[data-live-los]');
+    if (!el || el.dataset.liveLoaded) return;
+    el.dataset.liveLoaded = '1';
+    try {
+      const los = new Set(parseLos(el.dataset.staticLos));
+      for (const p of await fetchPosts(el.dataset.liveLos!)) parseLos(p.los).forEach((n) => los.add(n));
+      el.textContent = String(los.size);
+    } catch {}
+  });
+</script>

@@ -21,6 +21,36 @@ npm run dev      # http://localhost:4321
 
 Ustaw `draft: true`, żeby wpis nie pojawił się jeszcze publicznie.
 
+## Panel (casportfolio.pl/panel)
+
+Drugi sposób dodawania wpisów — przez stronę, bez gita. Logowanie przez Google,
+wpisy i zdjęcia trafiają do Firebase Realtime Database (`posts/`, `photos/`) i
+pokazują się na stronach portfolio obok wpisów z Markdowna (bez przebudowy).
+Kod: `src/pages/panel.astro`, `src/pages/post.astro`, `src/lib/live.ts`.
+
+**Kto może pisać** — decyduje węzeł `editors` w bazie (edytujesz go tylko w
+konsoli Firebase). Klucz = e-mail małymi literami z kropkami zamienionymi na
+przecinki, wartość = slug osoby albo `*` (admin: może pisać wszędzie i usuwać
+komentarze):
+
+```json
+"editors": {
+  "jan,kowalski@gmail,com": "michal",
+  "moj,mail@gmail,com": "*"
+}
+```
+
+Każdy może dodawać/edytować/usuwać tylko wpisy w swoim portfolio.
+
+### Jednorazowa konfiguracja w konsoli Firebase (projekt `komentarzecas`)
+
+1. **Authentication → Sign-in method → Google** → włącz.
+2. **Authentication → Settings → Authorized domains** → dodaj `casportfolio.pl`.
+3. **Realtime Database → Rules** → wklej zawartość `database.rules.json` → Publish.
+4. **Realtime Database → Data** → dodaj węzeł `editors` jak wyżej.
+
+Zmieniając reguły, zawsze edytuj `database.rules.json` w repo i wklejaj całość.
+
 ## Publikacja (GitHub Pages — darmowo)
 
 1. Załóż repozytorium na GitHub i wypchnij ten folder.

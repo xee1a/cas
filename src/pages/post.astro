@@ -1,0 +1,150 @@
+---
+// Single entry added through /panel/. Static page; the entry is loaded from
+// Firebase using ?p=<person>&id=<id>.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import T from '../components/T.astro';
+---
+
+<BaseLayout title="CAS">
+  <article class="article wrap" id="live-post">
+    <p class="live-status" data-state="loading"><T en="Loading…" pl="Ładowanie…" /></p>
+    <p class="live-status" data-state="missing" hidden>
+      <T en="This entry doesn't exist (or was deleted)." pl="Ten wpis nie istnieje (albo został usunięty)." />
+    </p>
+  </article>
+  <div class="lightbox" id="lightbox" hidden><img alt="" /></div>
+</BaseLayout>
+
+<style is:global>
+  .live-status { color: var(--muted); padding: 40px 0; }
+  .live-lede { color: var(--muted); font-size: 1.08rem; margin: 10px 0 0; }
+  .live-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .live-gallery figure { margin: 0; }
+  .live-gallery button { all: unset; cursor: zoom-in; display: block; width: 100%; }
+  .live-gallery img {
+    width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+    border-radius: 12px; border: 1px solid var(--border);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .live-gallery button:hover img { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .live-gallery figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+  .live-evidence { margin: 36px 0 8px; }
+  .live-evidence h2 {
+    font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); margin: 0 0 16px;
+  }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+    background: rgb(0 0 0 / 0.85); cursor: zoom-out; padding: 16px;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+</style>
+
+<script>
+  import { fetchPost, fetchPhotos, fmtDate, parseLos, chip, h, t, base } from '../lib/live';
+  import { getPerson } from '../people';
+  import { LEARNING_OUTCOMES_FULL } from '../learning-outcomes';
+
+  // Reflection is plain text: blank line = new paragraph, "## " = heading.
+  function renderText(text: string) {
+    const out = document.createDocumentFragment();
+    for (const block of text.split(/\n\s*\n/)) {
+      const b = block.trim();
+      if (!b) continue;
+      if (b.startsWith('## ')) out.append(h('h2', undefined, b.slice(3)));
+      else {
+        const p = h('p');
+        b.split('\n').forEach((line, i) => {
+          if (i) p.append(h('br'));
+          p.append(line);
+        });
+        out.append(p);
+      }
+    }
+    return out;
+  }
+
+  document.addEventListener('astro:page-load', async () => {
+    const root = document.getElementById('live-post');
+    if (!root || root.dataset.loaded) return;
+    root.dataset.loaded = '1';
+    const status = (s: string) =>
+      root.querySelectorAll<HTMLElement>('.live-status').forEach((el) => (el.hidden = el.dataset.state !== s));
+
+    const q = new URLSearchParams(location.search);
+    const personSlug = q.get('p') ?? '';
+    const id = q.get('id') ?? '';
+    const person = getPerson(personSlug);
+    const post = person && id ? await fetchPost(personSlug, id).catch(() => null) : null;
+    if (!person || !post) return status('missing');
+
+    document.title = `${post.title} · CAS`;
+    status('');
+
+    const back = h('a', 'back-link');
+    back.href = `${base}${person.slug}/`;
+    back.append('← ' + person.name);
+
+    const header = h('header', 'article-header');
+    const meta = h('div', 'post-meta');
+    meta.append(chip(post.strand), h('span', 'post-date', fmtDate(post.date)));
+    if (post.hours) meta.append(h('span', 'post-date', `· ${post.hours} h`));
+    header.append(meta, h('h1', undefined, post.title));
+    if (post.summary) header.append(h('p', 'live-lede', post.summary));
+
+    const prose = h('div', 'prose');
+    prose.append(renderText(post.reflection ?? ''));
+    root.append(back, header, prose);
+
+    const photos = post.photoCount ? await fetchPhotos(personSlug, id).catch(() => []) : [];
+    if (photos.length) {
+      const sec = h('section', 'live-evidence');
+      sec.append(h('h2'));
+      sec.firstChild!.appendChild(t('Evidence', 'Dowody'));
+      const grid = h('div', 'live-gallery');
+      for (const ph of photos) {
+        const fig = h('figure');
+        const btn = h('button');
+        btn.type = 'button';
+        const img = h('img');
+        img.src = ph.src;
+        img.alt = ph.caption || post.title;
+        img.loading = 'lazy';
+        btn.append(img);
+        btn.addEventListener('click', () => {
+          const lb = document.getElementById('lightbox')!;
+          lb.querySelector('img')!.src = ph.src;
+          lb.hidden = false;
+        });
+        fig.append(btn);
+        if (ph.caption) fig.append(h('figcaption', undefined, ph.caption));
+        grid.append(fig);
+      }
+      sec.append(grid);
+      root.append(sec);
+    }
+
+    const los = parseLos(post.los);
+    if (los.length) {
+      const box = h('div', 'lo-callout');
+      const title = h('h3');
+      title.append(t('Related Learning Outcomes', 'Powiązane efekty uczenia się'));
+      const ul = h('ul');
+      for (const n of los) {
+        const lo = LEARNING_OUTCOMES_FULL.find((l) => l.n === n)!;
+        const li = h('li');
+        const text = h('span');
+        text.append(t(lo.title, lo.titlePl));
+        li.append(h('span', 'n', `LO${n}`), text);
+        ul.append(li);
+      }
+      box.append(title, ul);
+      root.append(box);
+    }
+
+    const lb = document.getElementById('lightbox')!;
+    lb.addEventListener('click', () => (lb.hidden = true));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && (lb.hidden = true));
+  });
+</script>

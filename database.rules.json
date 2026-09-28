@@ -1,0 +1,60 @@
+{
+  "rules": {
+    "comments": {
+      ".read": true,
+      "$slug": {
+        "$id": {
+          ".write": "!data.exists() || (auth != null && auth.token.email_verified == true && root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == '*')",
+          ".validate": "newData.hasChildren(['text','ts'])",
+          "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 600" },
+          "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "ts": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+    "fpc": {
+      ".read": true,
+      ".write": true
+    },
+    "editors": {
+      "$email": {
+        ".read": "auth != null && auth.token.email_verified == true && auth.token.email.toLowerCase().replace('.', ',') == $email"
+      }
+    },
+    "posts": {
+      ".read": true,
+      "$person": {
+        "$id": {
+          ".write": "auth != null && auth.token.email_verified == true && (root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == $person || root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == '*')",
+          ".validate": "newData.hasChildren(['title','strand','date','createdAt','updatedAt'])",
+          "title": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 150" },
+          "strand": { ".validate": "newData.isString() && newData.val().matches(/^(Creativity|Activity|Service)$/)" },
+          "date": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+          "summary": { ".validate": "newData.isString() && newData.val().length <= 400" },
+          "reflection": { ".validate": "newData.isString() && newData.val().length <= 20000" },
+          "los": { ".validate": "newData.isString() && newData.val().matches(/^([1-7](,[1-7])*)?$/)" },
+          "hours": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
+          "photoCount": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 12" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+    "photos": {
+      ".read": true,
+      "$person": {
+        "$id": {
+          ".write": "auth != null && auth.token.email_verified == true && (root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == $person || root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == '*')",
+          "$i": {
+            ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.hasChildren(['src'])",
+            "src": { ".validate": "newData.isString() && newData.val().beginsWith('data:image/jpeg;base64,') && newData.val().length <= 1300000" },
+            "caption": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    }
+  }
+}
