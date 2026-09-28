@@ -54,6 +54,14 @@ export async function fetchPosts(person: string): Promise<LivePost[]> {
   return Object.entries(val).map(([id, p]) => ({ ...p, id, person }));
 }
 
+export async function fetchAllPosts(): Promise<LivePost[]> {
+  const snap = await get(ref(db(), 'posts'));
+  const val = (snap.val() ?? {}) as Record<string, Record<string, Omit<LivePost, 'id' | 'person'>>>;
+  return Object.entries(val).flatMap(([person, posts]) =>
+    Object.entries(posts).map(([id, p]) => ({ ...p, id, person }))
+  );
+}
+
 export async function fetchPost(person: string, id: string): Promise<LivePost | null> {
   const snap = await get(ref(db(), `posts/${person}/${id}`));
   return snap.exists() ? { ...snap.val(), id, person } : null;

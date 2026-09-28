@@ -3,36 +3,203 @@ import { getCollection } from 'astro:content';
 import { PEOPLE } from '../people';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import T from '../components/T.astro';
+import { STRAND_PL, plExp } from '../i18n';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const photoOf = (p: string) => (p.startsWith('http') ? p : base + p.replace(/^\//, ''));
+
+const posts = await getCollection('reflections', ({ data }) => !data.draft);
+
+// Per-person counts (entries from /panel/ are added client-side below).
+const stats = new Map(PEOPLE.map((p) => [p.slug, { n: 0, los: new Set<number>() }]));
+for (const post of posts) {
+  const s = stats.get(post.data.person);
+  if (!s) continue;
+  s.n++;
+  post.data.learningOutcomes.forEach((lo) => s.los.add(lo));
+}
+const statEn = (n: number, c: number) => `${n} ${n === 1 ? 'experience' : 'experiences'} · ${c}/7 learning outcomes`;
+const statPl = (n: number, c: number) => `${n} ${plExp(n)} · ${c}/7 efektów uczenia się`;
+
+const RECENT = 6;
+const recent = [...posts].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, RECENT);
+const nameOf = (slug: string) => PEOPLE.find((p) => p.slug === slug)?.name ?? slug;
+const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+const CAS = [
+  {
+    s: 'Creativity',
+    en: 'Exploring and extending ideas, leading to an original or interpretive product or performance.',
+    pl: 'Rozwijanie i poszerzanie pomysłów, prowadzące do oryginalnego lub interpretacyjnego dzieła albo występu.',
+  },
+  {
+    s: 'Activity',
+    en: 'Physical exertion contributing to a healthy lifestyle.',
+    pl: 'Wysiłek fizyczny wspierający zdrowy styl życia.',
+  },
+  {
+    s: 'Service',
+    en: 'Collaborative and reciprocal engagement with the community in response to an authentic need.',
+    pl: 'Współpraca i wzajemne zaangażowanie ze społecznością w odpowiedzi na jej prawdziwe potrzeby.',
+  },
+];
+
+const REQS = [
+  { num: '18', en: 'months of weekly action', pl: 'miesięcy cotygodniowych działań' },
+  { num: '7', en: 'learning outcomes to achieve', pl: 'efektów uczenia się do osiągnięcia' },
+  { num: '5', en: 'CAS stages in each experience', pl: 'etapów CAS w każdym doświadczeniu' },
+  { num: '1+', en: 'collaborative CAS project', pl: 'wspólny projekt CAS' },
+  { num: '3', en: 'interviews with your supervisor', pl: 'rozmowy z opiekunem' },
+];
 ---
 
 <BaseLayout title="CAS Portfolios">
   <section class="portal wrap">
-    <header class="portal-head">
-      <p class="tagline"><T en="IB Diploma Programme" pl="Program IB Diploma" /></p>
-      <h1><T en="CAS Portfolios" pl="Portfolia CAS" /></h1>
-      <p class="lede"><T en="Creativity, Activity and Service. Reflections and evidence. Choose a portfolio." pl="Kreatywność, Aktywność i Służba. Refleksje i dowody. Wybierz portfolio." /></p>
-    </header>
+    <div class="portal-top">
+      <header class="portal-head">
+        <p class="tagline"><T en="IB Diploma Programme" pl="Program IB Diploma" /></p>
+        <h1><T en="CAS Portfolios" pl="Portfolia CAS" /></h1>
+        <p class="lede"><T en="Creativity, Activity and Service. Reflections and evidence. Choose a portfolio." pl="Kreatywność, Aktywność i Służba. Refleksje i dowody. Wybierz portfolio." /></p>
+      </header>
+      <span class="ib-mark portal-mark" aria-hidden="true"></span>
+    </div>
 
     <nav class="people" aria-label="People">
-      {PEOPLE.map((person) => (
-        <a class="person-card" href={`${base}${person.slug}/`}>
-          <div class="person-avatar" aria-hidden="true">
-            {person.photo ? (
-              <img src={photoOf(person.photo)} alt={person.name} />
-            ) : (
-              <span>{person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-            )}
-          </div>
-          <div class="person-body">
-            <span class="person-name">{person.name}</span>
-            <span class="person-meta"><T en={person.tagline} pl={person.taglinePl} /></span>
-          </div>
-          <span class="person-go" aria-hidden="true">&rarr;</span>
-        </a>
-      ))}
+      {PEOPLE.map((person) => {
+        const s = stats.get(person.slug)!;
+        return (
+          <a class="person-card" href={`${base}${person.slug}/`}>
+            <div class="person-avatar" aria-hidden="true">
+              {person.photo ? (
+                <img src={photoOf(person.photo)} alt={person.name} />
+              ) : (
+                <span>{person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
+              )}
+            </div>
+            <div class="person-body">
+              <span class="person-name">{person.name}</span>
+              <span class="person-meta" data-person-stats={person.slug} data-n={s.n} data-los={[...s.los].join(',')}>
+                <T en={statEn(s.n, s.los.size)} pl={statPl(s.n, s.los.size)} />
+              </span>
+              <span class="lo-dots" aria-hidden="true">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => <i class={s.los.has(n) ? 'on' : ''} data-lo={n}></i>)}
+              </span>
+            </div>
+            <span class="person-go" aria-hidden="true">&rarr;</span>
+          </a>
+        );
+      })}
     </nav>
+
+    <section class="home-section">
+      <div class="section-head">
+        <h2><T en="Recent experiences" pl="Ostatnie doświadczenia" /></h2>
+      </div>
+      <ul class="recent" id="recent" data-max={RECENT}>
+        {recent.map((post) => (
+          <li class="recent-item" data-date={post.data.date.toISOString().slice(0, 10)}>
+            <a href={`${base}${post.data.person}/reflections/${post.id}/`}>
+              <span class="recent-date">{shortDate(post.data.date)}</span>
+              <span class="recent-main">
+                <span class="recent-title">{post.data.title}</span>
+                <span class="recent-who">{nameOf(post.data.person)}</span>
+              </span>
+              <span class="recent-chips">
+                {post.data.strands.map((s) => <span class={`chip ${s}`}><T en={s} pl={STRAND_PL[s]} /></span>)}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      {recent.length === 0 && <p class="recent-empty" id="recent-empty"><T en="Nothing yet." pl="Jeszcze nic." /></p>}
+    </section>
+
+    <section class="home-section">
+      <div class="section-head">
+        <h2><T en="What is CAS?" pl="Czym jest CAS?" /></h2>
+        <a href={`${base}learning-outcomes/`}><T en="The 7 learning outcomes →" pl="7 efektów uczenia się →" /></a>
+      </div>
+      <div class="cas-strands">
+        {CAS.map((c) => (
+          <div class={`cas-strand ${c.s}`}>
+            <div class="cas-letter" aria-hidden="true">{c.s[0]}</div>
+            <h3><T en={c.s} pl={STRAND_PL[c.s]} /></h3>
+            <p><T en={c.en} pl={c.pl} /></p>
+          </div>
+        ))}
+      </div>
+      <div class="cas-reqs">
+        {REQS.map((r) => (
+          <div class="cas-req">
+            <div class="num">{r.num}</div>
+            <div class="label"><T en={r.en} pl={r.pl} /></div>
+          </div>
+        ))}
+      </div>
+    </section>
   </section>
 </BaseLayout>
+
+<script>
+  // Add entries from /panel/ (Firebase) to the per-person stats and the recent feed.
+  import { fetchAllPosts, parseLos, postUrl, chip, h, t, type LivePost } from '../lib/live';
+  import { getPerson } from '../people';
+  import { plExp } from '../i18n';
+
+  const shortDate = (iso: string) => {
+    const d = new Date(iso + 'T00:00:00');
+    return isNaN(d.valueOf()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  function recentItem(p: LivePost) {
+    const li = h('li', 'recent-item');
+    li.dataset.date = p.date;
+    const a = h('a');
+    a.href = postUrl(p.person, p.id);
+    const main = h('span', 'recent-main');
+    main.append(h('span', 'recent-title', p.title), h('span', 'recent-who', getPerson(p.person)?.name ?? p.person));
+    const chips = h('span', 'recent-chips');
+    chips.append(chip(p.strand));
+    a.append(h('span', 'recent-date', shortDate(p.date)), main, chips);
+    li.append(a);
+    return li;
+  }
+
+  document.addEventListener('astro:page-load', async () => {
+    const list = document.getElementById('recent');
+    if (!list || list.dataset.liveLoaded) return;
+    list.dataset.liveLoaded = '1';
+    let posts: LivePost[];
+    try {
+      posts = await fetchAllPosts();
+    } catch {
+      return;
+    }
+    if (!posts.length) return;
+
+    // Stats on each person card
+    document.querySelectorAll<HTMLElement>('[data-person-stats]').forEach((el) => {
+      const mine = posts.filter((p) => p.person === el.dataset.personStats);
+      if (!mine.length) return;
+      const los = new Set(parseLos(el.dataset.los));
+      mine.forEach((p) => parseLos(p.los).forEach((n) => los.add(n)));
+      const n = Number(el.dataset.n) + mine.length;
+      el.replaceChildren(t(
+        `${n} ${n === 1 ? 'experience' : 'experiences'} · ${los.size}/7 learning outcomes`,
+        `${n} ${plExp(n)} · ${los.size}/7 efektów uczenia się`
+      ));
+      el.parentElement!.querySelectorAll<HTMLElement>('.lo-dots i').forEach((dot) =>
+        dot.classList.toggle('on', los.has(Number(dot.dataset.lo)))
+      );
+    });
+
+    // Recent feed: merge by date, keep the newest few
+    for (const p of posts) {
+      const before = [...list.children].find((c) => ((c as HTMLElement).dataset.date ?? '') < p.date);
+      list.insertBefore(recentItem(p), before ?? null);
+    }
+    const max = Number(list.dataset.max);
+    while (list.children.length > max) list.lastElementChild!.remove();
+    document.getElementById('recent-empty')?.remove();
+  });
+</script>

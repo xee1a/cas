@@ -102,14 +102,20 @@ a { color: inherit; }
   padding-top: 16px;
   padding-bottom: 16px;
 }
+.site-header .wrap { max-width: 960px; }
 .header-left { display: flex; align-items: center; gap: 14px; }
+/* IB logo as a mask, so it takes the current text colour in every theme */
+.ib-mark {
+  display: block; aspect-ratio: 1; background: currentColor;
+  -webkit-mask: url('/images/ib-mark.png') center / contain no-repeat;
+  mask: url('/images/ib-mark.png') center / contain no-repeat;
+}
 .home-icon {
   display: inline-flex; align-items: center;
-  color: var(--muted); transition: color 0.15s ease;
+  color: var(--text); transition: transform 0.15s ease;
 }
-.home-icon:hover { color: var(--text); }
-.home-icon img { width: 26px; height: 26px; display: block; transition: transform 0.15s ease; }
-.home-icon:hover img { transform: scale(1.08); }
+.home-icon:hover { transform: scale(1.07); }
+.home-icon .ib-mark { width: 36px; }
 .brand {
   font-weight: 700;
   font-size: 1.05rem;
@@ -406,8 +412,13 @@ a { color: inherit; }
 .tracker .sub .lo-link:hover { color: var(--text); }
 
 /* ---------- Portal (person picker) ---------- */
-.portal { padding: clamp(56px, 13vh, 130px) 20px 90px; }
-.portal-head { max-width: 34ch; margin-bottom: 44px; }
+.portal { max-width: 960px; padding: clamp(48px, 10vh, 100px) 20px 90px; }
+.portal-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 28px;
+  margin-bottom: 48px;
+}
+.portal-head { max-width: 34ch; }
+.portal-mark { width: clamp(84px, 20vw, 190px); flex-shrink: 0; color: var(--text); }
 .portal-head h1 {
   font-family: var(--serif); font-weight: 500;
   font-size: clamp(2.6rem, 8vw, 3.8rem); letter-spacing: -0.02em;
@@ -416,6 +427,7 @@ a { color: inherit; }
 .portal-head .lede { font-size: 1.08rem; color: var(--text); opacity: 0.82; margin: 0; line-height: 1.6; }
 
 .people { display: grid; gap: 12px; }
+@media (min-width: 760px) { .people { grid-template-columns: 1fr 1fr; } }
 .person-card {
   --c: var(--muted);
   display: flex; align-items: center; gap: 18px;
@@ -439,6 +451,69 @@ a { color: inherit; }
 .person-meta { font-size: 0.88rem; color: var(--muted); }
 .person-go { color: var(--muted); font-size: 1.2rem; transition: transform 0.16s ease, color 0.16s ease; }
 .person-card:hover .person-go { transform: translateX(3px); color: var(--text); }
+.lo-dots { display: flex; gap: 4px; margin-top: 7px; }
+.lo-dots i {
+  width: 16px; height: 5px; border-radius: 3px;
+  background: var(--border); transition: background 0.3s ease;
+}
+.lo-dots i.on { background: var(--activity); }
+
+/* Home sections below the people grid */
+.home-section { margin-top: 72px; }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 8px;
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 1.7rem;
+  letter-spacing: -0.015em; margin: 0;
+}
+.section-head a { font-size: 0.9rem; color: var(--muted); text-decoration: none; }
+.section-head a:hover { color: var(--text); }
+
+.recent { list-style: none; margin: 0; padding: 0; }
+.recent-item a {
+  display: grid; grid-template-columns: 88px 1fr auto; align-items: center; gap: 16px;
+  padding: 14px 4px; border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--text);
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+.recent-item a:hover { background: color-mix(in srgb, var(--text) 4%, transparent); padding-left: 10px; }
+.recent-date { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.recent-main { display: flex; flex-direction: column; min-width: 0; }
+.recent-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-who { font-size: 0.86rem; color: var(--muted); }
+.recent-chips { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+.recent-empty { color: var(--muted); padding: 14px 4px; }
+@media (max-width: 560px) {
+  .recent-item a { grid-template-columns: 1fr auto; }
+  .recent-date { grid-column: 1 / -1; margin-bottom: -10px; }
+}
+
+.cas-strands { display: grid; gap: 12px; margin-top: 18px; }
+@media (min-width: 760px) { .cas-strands { grid-template-columns: repeat(3, 1fr); } }
+.cas-strand {
+  --c: var(--muted);
+  padding: 20px; border: 1px solid var(--border); border-top: 3px solid var(--c);
+  border-radius: var(--radius); background: var(--surface);
+}
+.cas-strand.Creativity { --c: var(--creativity); }
+.cas-strand.Activity { --c: var(--activity); }
+.cas-strand.Service { --c: var(--service); }
+.cas-letter { font-family: var(--serif); font-size: 2.4rem; line-height: 1; color: var(--c); }
+.cas-strand h3 { font-family: var(--serif); font-weight: 500; font-size: 1.3rem; margin: 8px 0 6px; }
+.cas-strand p { margin: 0; color: var(--muted); font-size: 0.94rem; line-height: 1.55; }
+
+.cas-reqs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;
+  margin-top: 12px;
+}
+.cas-req {
+  padding: 18px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface);
+}
+.cas-req .num { font-family: var(--serif); font-size: 2.1rem; line-height: 1.05; }
+.cas-req .label { font-size: 0.88rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 
 .portal-foot { margin-top: 36px; font-size: 0.92rem; color: var(--muted); }
 .portal-foot a { color: var(--text); text-underline-offset: 3px; }
