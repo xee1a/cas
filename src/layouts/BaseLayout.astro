@@ -73,6 +73,7 @@ const home = person ? `${base}${person.slug}/` : base;
             {person && <a href={`${base}${person.slug}/progress/`}><T en="Progress" pl="Postępy" /></a>}
             <a href={`${base}learning-outcomes/`}><T en="Learning Outcomes" pl="Efekty uczenia się" /></a>
             <a href={base}><T en="Portfolios" pl="Portfolia" /></a>
+            <a class="nav-cta" href={`${base}panel/`}>+ <T en="Add entry" pl="Dodaj wpis" /></a>
           </nav>
           <div class="lang-switch" role="group" aria-label="Language">
             <button type="button" class="lang-btn" data-lang-set="en">EN</button>

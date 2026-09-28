@@ -124,6 +124,11 @@ a { color: inherit; }
   transition: color 0.15s;
 }
 .nav a:hover { color: var(--text); }
+.nav a.nav-cta {
+  color: var(--bg); background: var(--text); border-radius: 8px;
+  padding: 5px 11px; font-weight: 600; white-space: nowrap;
+}
+.nav a.nav-cta:hover { color: var(--bg); opacity: 0.88; }
 
 .header-right { display: flex; align-items: center; gap: 16px; }
 
