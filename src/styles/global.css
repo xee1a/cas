@@ -12,6 +12,7 @@
   --creativity: #b3a3da;
   --activity: #79c4b0;
   --service: #d98f5f;
+  --project: #86aee8;
   --bg: #14120f;
   --surface: #1c1a16;
   --border: #302c26;
@@ -26,6 +27,7 @@
   --creativity: #b3a3da;
   --activity: #7ecab6;
   --service: #e0966a;
+  --project: #8fb5ec;
   --bg: #33302b;
   --surface: #3d3a34;
   --border: #4d4941;
@@ -40,6 +42,7 @@
   --creativity: #6f5aa0;
   --activity: #3f7d6c;
   --service: #b56637;
+  --project: #2f63b0;
   --bg: #faf8f4;
   --surface: #ffffff;
   --border: #e8e3da;
@@ -217,6 +220,7 @@ a { color: inherit; }
 .chip.Creativity { color: var(--creativity); background: color-mix(in srgb, var(--creativity) 12%, transparent); }
 .chip.Activity   { color: var(--activity);   background: color-mix(in srgb, var(--activity) 12%, transparent); }
 .chip.Service    { color: var(--service);    background: color-mix(in srgb, var(--service) 12%, transparent); }
+.chip.Project    { color: var(--project);    background: color-mix(in srgb, var(--project) 12%, transparent); }
 
 /* Filter bar */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 8px; }
@@ -376,6 +380,7 @@ a { color: inherit; }
 .strand-row.Creativity { --c: var(--creativity); }
 .strand-row.Activity { --c: var(--activity); }
 .strand-row.Service { --c: var(--service); }
+.strand-row.Project { --c: var(--project); }
 .strand-mark {
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--c); flex-shrink: 0;
@@ -491,7 +496,8 @@ a { color: inherit; }
 }
 
 .cas-strands { display: grid; gap: 12px; margin-top: 18px; }
-@media (min-width: 760px) { .cas-strands { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 560px) { .cas-strands { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 900px) { .cas-strands { grid-template-columns: repeat(4, 1fr); } }
 .cas-strand {
   --c: var(--muted);
   padding: 20px; border: 1px solid var(--border); border-top: 3px solid var(--c);
@@ -500,6 +506,7 @@ a { color: inherit; }
 .cas-strand.Creativity { --c: var(--creativity); }
 .cas-strand.Activity { --c: var(--activity); }
 .cas-strand.Service { --c: var(--service); }
+.cas-strand.Project { --c: var(--project); }
 .cas-letter { font-family: var(--serif); font-size: 2.4rem; line-height: 1; color: var(--c); }
 .cas-strand h3 { font-family: var(--serif); font-weight: 500; font-size: 1.3rem; margin: 8px 0 6px; }
 .cas-strand p { margin: 0; color: var(--muted); font-size: 0.94rem; line-height: 1.55; }

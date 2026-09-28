@@ -7,7 +7,7 @@ import { PEOPLE } from '../people';
 import { LEARNING_OUTCOMES_FULL } from '../learning-outcomes';
 import { STRAND_PL, STRAND_SUB_EN, STRAND_SUB_PL } from '../i18n';
 
-const STRANDS = ['Creativity', 'Activity', 'Service'];
+const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
 ---
 
 <BaseLayout title="Panel · CAS">
@@ -52,6 +52,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
         <button type="button" class="p-tab" role="tab" data-tab="comments" aria-selected="false">
           <T en="Comments" pl="Komentarze" /> <span class="p-count" id="p-c-count"></span>
         </button>
+        <button type="button" class="p-tab" role="tab" data-tab="project" aria-selected="false"><T en="CAS project" pl="Projekt CAS" /></button>
       </div>
 
       <div data-pane="posts">
@@ -140,6 +141,72 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
         <p class="p-hint"><T en="Notes visitors left on your portfolio page. Deleting one removes it for everyone." pl="Notatki zostawione przez odwiedzających na twojej stronie. Usunięcie usuwa je dla wszystkich." /></p>
         <ul class="p-comments" id="p-comments"></ul>
       </div>
+
+      <div data-pane="project" hidden>
+        <p class="p-hint"><T en="Your CAS project plan. It's shown at the top of your Project page. Add updates about the project as normal posts with the Project category." pl="Plan twojego projektu CAS. Pojawia się na górze strony Projekt. Postępy dodawaj jako zwykłe wpisy z kategorią Projekt." /></p>
+        <form id="p-proj-form" class="p-card" novalidate>
+          <div class="p-row">
+            <label class="p-field grow">
+              <span><T en="Project title" pl="Nazwa projektu" /></span>
+              <input name="title" type="text" maxlength="150" data-ph-en="e.g. Charity football tournament" data-ph-pl="np. Charytatywny turniej piłkarski" />
+            </label>
+            <label class="p-field">
+              <span><T en="Status" pl="Status" /></span>
+              <select name="status" class="p-select">
+                <option value="planning">Planning / Planowanie</option>
+                <option value="active">In progress / W trakcie</option>
+                <option value="done">Completed / Ukończony</option>
+              </select>
+            </label>
+          </div>
+
+          <fieldset class="p-field">
+            <legend><T en="Area" pl="Obszar" /></legend>
+            <div class="p-areas">
+              {['Creativity', 'Activity', 'Service'].map((s) => (
+                <label class={`p-area ${s}`}>
+                  <input type="checkbox" name="areas" value={s} />
+                  <T en={s} pl={STRAND_PL[s]} />
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div class="p-row">
+            <label class="p-field grow">
+              <span><T en="Duration" pl="Czas trwania" /></span>
+              <input name="duration" type="text" maxlength="100" data-ph-en="e.g. Oct 2026 – Jan 2027" data-ph-pl="np. paź 2026 – sty 2027" />
+            </label>
+            <label class="p-field grow">
+              <span><T en="Team" pl="Zespół" /></span>
+              <input name="team" type="text" maxlength="300" data-ph-en="Who you're doing it with" data-ph-pl="Z kim to robisz" />
+            </label>
+          </div>
+
+          <label class="p-field">
+            <span><T en="Goal" pl="Cel" /></span>
+            <textarea name="goal" rows="3" maxlength="4000" data-ph-en="What do you want to achieve, and for whom?" data-ph-pl="Co chcesz osiągnąć i dla kogo?"></textarea>
+          </label>
+          <label class="p-field">
+            <span><T en="How to achieve it?" pl="Jak to osiągnąć?" /></span>
+            <textarea name="how" rows="4" maxlength="4000" data-ph-en="Steps, roles, resources, timeline." data-ph-pl="Kroki, role, zasoby, harmonogram."></textarea>
+          </label>
+          <label class="p-field">
+            <span><T en="Outcomes" pl="Rezultaty" /></span>
+            <textarea name="outcomes" rows="3" maxlength="4000" data-ph-en="What will come out of it (or what did)?" data-ph-pl="Co z tego wyniknie (albo wynikło)?"></textarea>
+          </label>
+          <label class="p-field">
+            <span><T en="Possible problems" pl="Możliwe problemy" /></span>
+            <textarea name="problems" rows="3" maxlength="4000" data-ph-en="What could go wrong, and how you'll handle it." data-ph-pl="Co może pójść nie tak i jak sobie z tym poradzisz."></textarea>
+          </label>
+
+          <div class="p-actions">
+            <p class="p-msg" id="p-proj-msg"></p>
+            <button type="button" class="p-btn danger" id="p-proj-delete" hidden><T en="Delete plan" pl="Usuń plan" /></button>
+            <button type="submit" class="p-btn primary"><T en="Save project" pl="Zapisz projekt" /></button>
+          </div>
+        </form>
+      </div>
     </div>
   </section>
 </BaseLayout>
@@ -168,8 +235,8 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
   .p-row .grow { flex: 1 1 260px; }
   .p-hours input { max-width: 140px; }
 
-  .p-strands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  @media (max-width: 560px) { .p-strands { grid-template-columns: 1fr; } }
+  .p-strands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 700px) { .p-strands { grid-template-columns: 1fr 1fr; } }
   .p-strand {
     --c: var(--muted);
     position: relative; cursor: pointer; border: 1.5px solid var(--border); border-radius: 12px;
@@ -179,6 +246,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
   .p-strand.Creativity { --c: var(--creativity); }
   .p-strand.Activity { --c: var(--activity); }
   .p-strand.Service { --c: var(--service); }
+  .p-strand.Project { --c: var(--project); }
   .p-strand input { position: absolute; opacity: 0; pointer-events: none; }
   .p-strand-name { font-weight: 700; color: var(--c); }
   .p-strand-sub { font-size: 0.82rem; color: var(--muted); }
@@ -243,6 +311,19 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
   .p-comment-text { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
   .p-comment .p-btn { padding: 5px 12px; font-size: 0.85rem; flex-shrink: 0; }
   .p-comments .p-empty { color: var(--muted); }
+  .p-select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
+  .p-areas { display: flex; gap: 8px; flex-wrap: wrap; }
+  .p-area {
+    --c: var(--muted);
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 14px; background: var(--bg);
+    font-weight: 600; font-size: 0.9rem; color: var(--c);
+  }
+  .p-area.Creativity { --c: var(--creativity); }
+  .p-area.Activity { --c: var(--activity); }
+  .p-area.Service { --c: var(--service); }
+  .p-area input { accent-color: var(--c); }
+  .p-area:has(input:checked) { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--bg)); }
   .p-list-title { font-size: 1.15rem; margin: 34px 0 10px; }
   .p-list { list-style: none; margin: 0; padding: 0; }
   .p-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -254,9 +335,9 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
 
 <script>
   import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from 'firebase/auth';
-  import { ref, get, push, update, remove as dbRemove } from 'firebase/database';
+  import { ref, get, push, set, update, remove as dbRemove } from 'firebase/database';
   import {
-    firebaseApp, db, emailKey, fetchPosts, fetchPost, fetchPhotos, parseLos, postUrl, fmtDate, chip, h, t,
+    firebaseApp, db, emailKey, fetchPosts, fetchPost, fetchPhotos, fetchProject, parseLos, postUrl, fmtDate, chip, h, t,
     type LivePost, type LivePhoto, type Strand,
   } from '../lib/live';
   import { PEOPLE, getPerson } from '../people';
@@ -325,7 +406,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
     // Bilingual placeholders
     const applyPlaceholders = () => {
       const l = document.documentElement.dataset.lang === 'pl' ? 'pl' : 'en';
-      form.querySelectorAll<HTMLElement>('[data-ph-en]').forEach((el) =>
+      root.querySelectorAll<HTMLElement>('[data-ph-en]').forEach((el) =>
         el.setAttribute('placeholder', el.dataset['ph' + (l === 'pl' ? 'Pl' : 'En')] ?? '')
       );
     };
@@ -375,6 +456,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
       resetForm();
       loadList();
       loadComments();
+      loadProject();
     }
 
     // ---- Tabs -------------------------------------------------------------
@@ -384,6 +466,67 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
       root.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== name));
     };
     tabs.forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab!)));
+
+    // ---- CAS project ------------------------------------------------------
+    const projForm = $<HTMLFormElement>('p-proj-form');
+    const projMsg = $('p-proj-msg');
+    const projDel = $<HTMLButtonElement>('p-proj-delete');
+    const pf = (name: string) => projForm.elements.namedItem(name) as HTMLInputElement;
+    const PROJ_TEXT = ['title', 'duration', 'team', 'goal', 'how', 'outcomes', 'problems'];
+
+    async function loadProject() {
+      const forPerson = person;
+      projForm.reset();
+      say(projMsg, '', '');
+      let plan = null;
+      try {
+        plan = await fetchProject(forPerson);
+      } catch {}
+      if (forPerson !== person) return;
+      projDel.hidden = !plan;
+      if (!plan) return;
+      for (const k of PROJ_TEXT) pf(k).value = (plan as any)[k] ?? '';
+      pf('status').value = plan.status ?? 'planning';
+      const areas = (plan.areas ?? '').split(',');
+      projForm.querySelectorAll<HTMLInputElement>('input[name="areas"]').forEach((c) => (c.checked = areas.includes(c.value)));
+    }
+
+    projForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!person) return;
+      const title = pf('title').value.trim();
+      if (!title) return say(projMsg, 'Add a project title.', 'Dodaj nazwę projektu.', 'err');
+      const plan: Record<string, unknown> = { title, status: pf('status').value, updatedAt: Date.now() };
+      for (const k of PROJ_TEXT.slice(1)) {
+        const v = pf(k).value.trim();
+        if (v) plan[k] = v;
+      }
+      const areas = [...projForm.querySelectorAll<HTMLInputElement>('input[name="areas"]:checked')].map((c) => c.value).join(',');
+      if (areas) plan.areas = areas;
+      say(projMsg, 'Saving…', 'Zapisywanie…');
+      try {
+        await set(ref(db(), `projects/${person}`), plan);
+        projDel.hidden = false;
+        const link = h('a');
+        link.href = `${location.origin}${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${person}/project/`;
+        link.append(t('View it →', 'Zobacz →'));
+        say(projMsg, 'Saved! ', 'Zapisano! ', 'ok');
+        projMsg.append(link);
+      } catch (err: any) {
+        say(projMsg, `Couldn't save (${err?.code ?? err}).`, `Nie udało się zapisać (${err?.code ?? err}).`, 'err');
+      }
+    });
+
+    projDel.addEventListener('click', async () => {
+      const q = document.documentElement.dataset.lang === 'pl' ? 'Usunąć plan projektu?' : 'Delete the project plan?';
+      if (!confirm(q)) return;
+      try {
+        await dbRemove(ref(db(), `projects/${person}`));
+        loadProject();
+      } catch (err: any) {
+        say(projMsg, `Couldn't delete (${err?.code ?? err}).`, `Nie udało się usunąć (${err?.code ?? err}).`, 'err');
+      }
+    });
 
     // ---- Comments ---------------------------------------------------------
     const commentsEl = $('p-comments');
@@ -524,7 +667,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
       const strand = (form.querySelector<HTMLInputElement>('input[name="strand"]:checked')?.value ?? '') as Strand;
       const title = field('title').value.trim();
       const date = field('date').value;
-      if (!strand) return say(msgEl, 'Pick Creativity, Activity or Service.', 'Wybierz Kreatywność, Aktywność albo Służbę.', 'err');
+      if (!strand) return say(msgEl, 'Pick Creativity, Activity, Service or Project.', 'Wybierz Kreatywność, Aktywność, Służbę albo Projekt.', 'err');
       if (!title) return say(msgEl, 'Add a title.', 'Dodaj tytuł.', 'err');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return say(msgEl, 'Pick a date.', 'Wybierz datę.', 'err');
       if (processing) return say(msgEl, 'Wait for the photos to finish.', 'Poczekaj, aż zdjęcia się przetworzą.', 'err');

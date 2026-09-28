@@ -5,12 +5,14 @@ export const STRAND_PL: Record<string, string> = {
   Creativity: 'Kreatywność',
   Activity: 'Aktywność',
   Service: 'Służba',
+  Project: 'Projekt',
 };
 
 export const STRAND_SUB_PL: Record<string, string> = {
   Creativity: 'Sztuka, projekty, tworzenie',
   Activity: 'Sport, ruch, wysiłek',
   Service: 'Wolontariat, pomaganie innym',
+  Project: 'Projekt CAS: wspólna seria doświadczeń',
 };
 
 // Polish plural of "doświadczenie" for a count (1 / 2-4 / 5+).
@@ -24,4 +26,5 @@ export const STRAND_SUB_EN: Record<string, string> = {
   Creativity: 'Art, projects, making',
   Activity: 'Sport, movement, effort',
   Service: 'Volunteering, helping others',
+  Project: 'CAS project: a collaborative series of experiences',
 };

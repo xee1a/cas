@@ -12,8 +12,8 @@ import { getDatabase, ref, get } from 'firebase/database';
 import { FIREBASE_CONFIG } from '../firebase-config';
 import { STRAND_PL } from '../i18n';
 
-export type Strand = 'Creativity' | 'Activity' | 'Service';
-export const STRANDS: Strand[] = ['Creativity', 'Activity', 'Service'];
+export type Strand = 'Creativity' | 'Activity' | 'Service' | 'Project';
+export const STRANDS: Strand[] = ['Creativity', 'Activity', 'Service', 'Project'];
 
 export interface LivePost {
   id: string;
@@ -28,6 +28,47 @@ export interface LivePost {
   photoCount?: number;
   createdAt: number;
   updatedAt: number;
+}
+
+// One CAS project plan per person (fields follow the school's portfolio outline).
+export interface ProjectPlan {
+  title: string;
+  areas?: string; // "Creativity,Service"
+  status?: 'planning' | 'active' | 'done';
+  duration?: string;
+  team?: string;
+  goal?: string;
+  how?: string;
+  outcomes?: string;
+  problems?: string;
+  updatedAt: number;
+}
+
+export async function fetchProject(person: string): Promise<ProjectPlan | null> {
+  const snap = await get(ref(db(), `projects/${person}`));
+  return snap.exists() ? snap.val() : null;
+}
+
+export const PROJECT_STATUS: Record<string, [string, string]> = {
+  planning: ['Planning', 'Planowanie'],
+  active: ['In progress', 'W trakcie'],
+  done: ['Completed', 'Ukończony'],
+};
+
+// Plain text -> paragraphs (blank line = new paragraph, newline = line break).
+export function paragraphs(text: string) {
+  const out = document.createDocumentFragment();
+  for (const block of text.split(/\n\s*\n/)) {
+    const b = block.trim();
+    if (!b) continue;
+    const p = h('p');
+    b.split('\n').forEach((line, i) => {
+      if (i) p.append(h('br'));
+      p.append(line);
+    });
+    out.append(p);
+  }
+  return out;
 }
 
 export interface LivePhoto {

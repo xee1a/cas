@@ -2,7 +2,8 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 // CAS strands
-export const STRANDS = ['Creativity', 'Activity', 'Service'] as const;
+// CAS strands, plus the CAS project (a collaborative series of experiences)
+export const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'] as const;
 
 // 7 CAS Learning Outcomes (LO1-LO7) - oficjalne IB
 export const LEARNING_OUTCOMES: Record<number, string> = {

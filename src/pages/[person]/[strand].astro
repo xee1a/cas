@@ -36,6 +36,88 @@ const posts = (
       <h1><T en={strand} pl={STRAND_PL[strand]} /></h1>
       <p><T en={STRAND_SUB_EN[strand]} pl={STRAND_SUB_PL[strand]} /></p>
     </header>
+    {strand === 'Project' && <div class="project-plan" data-project-plan={person.slug} hidden></div>}
     <PostList posts={posts} person={person.slug} strand={strand} />
   </section>
 </BaseLayout>
+
+<script>
+  // CAS project plan saved in the panel (Firebase), shown on the Project page.
+  import { fetchProject, chip, h, t, paragraphs, PROJECT_STATUS, type Strand } from '../../lib/live';
+
+  document.addEventListener('astro:page-load', async () => {
+    const box = document.querySelector<HTMLElement>('[data-project-plan]');
+    if (!box || box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    let plan;
+    try {
+      plan = await fetchProject(box.dataset.projectPlan!);
+    } catch {
+      return;
+    }
+    if (!plan) return;
+
+    const top = h('div', 'pp-top');
+    top.append(h('span', 'pp-kicker'));
+    top.firstChild!.appendChild(t('CAS project plan', 'Plan projektu CAS'));
+    const [en, pl] = PROJECT_STATUS[plan.status ?? 'planning'] ?? PROJECT_STATUS.planning;
+    const status = h('span', `pp-status ${plan.status ?? 'planning'}`);
+    status.append(t(en, pl));
+    top.append(status);
+
+    const meta = h('div', 'pp-meta');
+    (plan.areas ?? '').split(',').filter(Boolean).forEach((a) => meta.append(chip(a as Strand)));
+    if (plan.duration) meta.append(h('span', 'pp-fact', plan.duration));
+    if (plan.team) {
+      const team = h('span', 'pp-fact');
+      team.append(t('Team: ', 'Zespół: '), plan.team);
+      meta.append(team);
+    }
+
+    box.append(top, h('h2', 'pp-title', plan.title));
+    if (meta.childNodes.length) box.append(meta);
+
+    const grid = h('div', 'pp-grid');
+    const sections: [keyof typeof plan, string, string][] = [
+      ['goal', 'Goal', 'Cel'],
+      ['how', 'How to achieve it', 'Jak to osiągnąć'],
+      ['outcomes', 'Outcomes', 'Rezultaty'],
+      ['problems', 'Possible problems', 'Możliwe problemy'],
+    ];
+    for (const [key, en2, pl2] of sections) {
+      const text = plan[key];
+      if (typeof text !== 'string' || !text) continue;
+      const sec = h('section', 'pp-sec');
+      const head = h('h3');
+      head.append(t(en2, pl2));
+      sec.append(head, paragraphs(text));
+      grid.append(sec);
+    }
+    if (grid.childNodes.length) box.append(grid);
+    box.hidden = false;
+  });
+</script>
+
+<style is:global>
+  .project-plan {
+    margin: 8px 0 34px; padding: 24px; border-radius: var(--radius);
+    border: 1px solid var(--border); border-top: 3px solid var(--project); background: var(--surface);
+  }
+  .pp-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .pp-kicker { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .pp-status {
+    font-size: 0.8rem; font-weight: 600; border-radius: 999px; padding: 3px 10px;
+    color: var(--project); background: color-mix(in srgb, var(--project) 14%, transparent);
+  }
+  .pp-status.done { color: var(--activity); background: color-mix(in srgb, var(--activity) 14%, transparent); }
+  .pp-title { font-family: var(--serif); font-weight: 500; font-size: 1.7rem; letter-spacing: -0.01em; margin: 8px 0 10px; line-height: 1.15; }
+  .pp-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 6px; }
+  .pp-fact { font-size: 0.88rem; color: var(--muted); }
+  .pp-grid { display: grid; gap: 4px 28px; margin-top: 14px; }
+  @media (min-width: 640px) { .pp-grid { grid-template-columns: 1fr 1fr; } }
+  .pp-sec h3 {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); margin: 12px 0 4px;
+  }
+  .pp-sec p { margin: 0 0 8px; line-height: 1.6; }
+</style>
