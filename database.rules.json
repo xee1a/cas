@@ -4,7 +4,7 @@
       ".read": true,
       "$slug": {
         "$id": {
-          ".write": "!data.exists() || (auth != null && auth.token.email_verified == true && root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == '*')",
+          ".write": "!data.exists() || (!newData.exists() && auth != null && auth.token.email_verified == true && (root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == $slug || root.child('editors').child(auth.token.email.toLowerCase().replace('.', ',')).val() == '*'))",
           ".validate": "newData.hasChildren(['text','ts'])",
           "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 600" },
           "name": { ".validate": "newData.isString() && newData.val().length <= 40" },

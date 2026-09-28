@@ -12,7 +12,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
 
 <BaseLayout title="Panel · CAS">
   <section class="panel wrap">
-    <h1 class="panel-title"><T en="Add to your portfolio" pl="Dodaj do portfolio" /></h1>
+    <h1 class="panel-title"><T en="Panel" pl="Panel" /></h1>
 
     <!-- Signed out -->
     <div class="p-card" id="p-signin" hidden>
@@ -38,7 +38,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
       <div class="p-bar">
         <span class="p-who">
           <span id="p-email"></span> ·
-          <T en="posting to" pl="dodajesz do" />
+          <T en="managing" pl="zarządzasz" />
           <strong id="p-person-name"></strong>
           <select id="p-person-select" hidden>
             {PEOPLE.map((p) => <option value={p.slug}>{p.name}</option>)}
@@ -47,6 +47,14 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
         <button type="button" class="p-link" data-signout><T en="Sign out" pl="Wyloguj" /></button>
       </div>
 
+      <div class="p-tabs" role="tablist">
+        <button type="button" class="p-tab" role="tab" data-tab="posts" aria-selected="true"><T en="Posts" pl="Wpisy" /></button>
+        <button type="button" class="p-tab" role="tab" data-tab="comments" aria-selected="false">
+          <T en="Comments" pl="Komentarze" /> <span class="p-count" id="p-c-count"></span>
+        </button>
+      </div>
+
+      <div data-pane="posts">
       <form id="p-form" class="p-card" novalidate>
         <h2 class="p-form-title">
           <span id="p-mode-new"><T en="New entry" pl="Nowy wpis" /></span>
@@ -126,6 +134,12 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
 
       <h2 class="p-list-title"><T en="Entries added here" pl="Wpisy dodane tutaj" /></h2>
       <ul class="p-list" id="p-list"></ul>
+      </div>
+
+      <div data-pane="comments" hidden>
+        <p class="p-hint"><T en="Notes visitors left on your portfolio page. Deleting one removes it for everyone." pl="Notatki zostawione przez odwiedzających na twojej stronie. Usunięcie usuwa je dla wszystkich." /></p>
+        <ul class="p-comments" id="p-comments"></ul>
+      </div>
     </div>
   </section>
 </BaseLayout>
@@ -212,6 +226,23 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
   .p-msg.err { color: #e05a5a; }
   .p-msg.ok { color: var(--activity); }
 
+  .p-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+  .p-tab {
+    font: inherit; font-weight: 600; background: none; border: 0; border-bottom: 2px solid transparent;
+    color: var(--muted); padding: 8px 14px; margin-bottom: -1px; cursor: pointer;
+  }
+  .p-tab:hover { color: var(--text); }
+  .p-tab[aria-selected='true'] { color: var(--text); border-bottom-color: var(--text); }
+  .p-count { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+  .p-comments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .p-comment { border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px; background: var(--surface); display: flex; gap: 12px; align-items: flex-start; }
+  .p-comment-body { flex: 1; min-width: 0; }
+  .p-comment-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+  .p-comment-author { font-weight: 600; font-size: 0.95rem; }
+  .p-comment-when { color: var(--muted); font-size: 0.78rem; }
+  .p-comment-text { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+  .p-comment .p-btn { padding: 5px 12px; font-size: 0.85rem; flex-shrink: 0; }
+  .p-comments .p-empty { color: var(--muted); }
   .p-list-title { font-size: 1.15rem; margin: 34px 0 10px; }
   .p-list { list-style: none; margin: 0; padding: 0; }
   .p-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -223,7 +254,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
 
 <script>
   import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from 'firebase/auth';
-  import { ref, get, push, update } from 'firebase/database';
+  import { ref, get, push, update, remove as dbRemove } from 'firebase/database';
   import {
     firebaseApp, db, emailKey, fetchPosts, fetchPost, fetchPhotos, parseLos, postUrl, fmtDate, chip, h, t,
     type LivePost, type LivePhoto, type Strand,
@@ -343,6 +374,67 @@ const STRANDS = ['Creativity', 'Activity', 'Service'];
       $('p-person-name').textContent = getPerson(slug)?.name ?? slug;
       resetForm();
       loadList();
+      loadComments();
+    }
+
+    // ---- Tabs -------------------------------------------------------------
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.p-tab')];
+    const showTab = (name: string) => {
+      tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+      root.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== name));
+    };
+    tabs.forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab!)));
+
+    // ---- Comments ---------------------------------------------------------
+    const commentsEl = $('p-comments');
+    async function loadComments() {
+      const forPerson = person;
+      let items: { id: string; name?: string; text?: string; ts?: number }[] = [];
+      try {
+        const val = (await get(ref(db(), `comments/${forPerson}`))).val() ?? {};
+        items = Object.entries(val).map(([id, c]: [string, any]) => ({ id, ...c }));
+      } catch {}
+      if (forPerson !== person) return;
+      items.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0));
+      $('p-c-count').textContent = items.length ? `(${items.length})` : '';
+      if (!items.length) {
+        const li = h('li', 'p-empty');
+        li.append(t('No comments on this portfolio.', 'Brak komentarzy w tym portfolio.'));
+        return commentsEl.replaceChildren(li);
+      }
+      const loc = () => (document.documentElement.dataset.lang === 'pl' ? 'pl-PL' : 'en-GB');
+      commentsEl.replaceChildren(
+        ...items.map((c) => {
+          const li = h('li', 'p-comment');
+          const body = h('div', 'p-comment-body');
+          const head = h('div', 'p-comment-head');
+          const author = h('span', 'p-comment-author');
+          if (c.name?.trim()) author.textContent = c.name.trim();
+          else author.append(t('Anonymous', 'Anonim'));
+          const when = c.ts
+            ? new Date(c.ts).toLocaleString(loc(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '';
+          head.append(author, h('span', 'p-comment-when', when));
+          body.append(head, h('p', 'p-comment-text', String(c.text ?? '')));
+          const del = h('button', 'p-btn danger');
+          del.type = 'button';
+          del.append(t('Delete', 'Usuń'));
+          del.addEventListener('click', async () => {
+            const q = document.documentElement.dataset.lang === 'pl' ? 'Usunąć ten komentarz?' : 'Delete this comment?';
+            if (!confirm(q)) return;
+            del.disabled = true;
+            try {
+              await dbRemove(ref(db(), `comments/${forPerson}/${c.id}`));
+              loadComments();
+            } catch (err: any) {
+              del.disabled = false;
+              alert(`Couldn't delete (${err?.code ?? err}).`);
+            }
+          });
+          li.append(body, del);
+          return li;
+        })
+      );
     }
 
     // ---- Form -------------------------------------------------------------

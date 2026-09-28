@@ -108,7 +108,8 @@ a { color: inherit; }
   color: var(--muted); transition: color 0.15s ease;
 }
 .home-icon:hover { color: var(--text); }
-.home-icon svg { width: 21px; height: 21px; display: block; }
+.home-icon img { width: 26px; height: 26px; display: block; transition: transform 0.15s ease; }
+.home-icon:hover img { transform: scale(1.08); }
 .brand {
   font-weight: 700;
   font-size: 1.05rem;
