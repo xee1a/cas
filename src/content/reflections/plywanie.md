@@ -23,10 +23,18 @@ gallery:
     caption: "23 Sep"
   - src: /images/alex_activity/sep25.png
     caption: "25 Sep"
+  - src: /images/alex_activity/sep28.webp
+    caption: "28 Sep"
 # Real data from Apple Watch (Pool Swim summaries)
 fitness:
   activity: "Swimming"
   workouts:
+    - date: "28 Sep"
+      distance: 1000
+      duration: "32:44"
+      pace: "3:16 /100m"
+      calories: 583
+      avgHr: 149
     - date: "25 Sep"
       distance: 1250
       duration: "36:42"
