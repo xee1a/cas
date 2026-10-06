@@ -95,6 +95,19 @@ export const PEOPLE: Person[] = [
       'z zakresu Kreatywności, Aktywności i Służby, wraz z refleksjami i dowodami.',
     photo: '',
   },
+  {
+    slug: 'david',
+    name: 'David Losev',
+    tagline: 'IB Diploma Programme · CAS Portfolio',
+    taglinePl: 'Program IB Diploma · Portfolio CAS',
+    intro:
+      'My CAS portfolio for the IB Diploma Programme, covering my Creativity, ' +
+      'Activity and Service experiences, with reflections and evidence.',
+    introPl:
+      'Moje portfolio CAS w ramach programu IB Diploma, obejmujące doświadczenia ' +
+      'z zakresu Kreatywności, Aktywności i Służby, wraz z refleksjami i dowodami.',
+    photo: '',
+  },
 ];
 
 export const getPerson = (slug: string): Person | undefined =>
