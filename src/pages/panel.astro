@@ -703,18 +703,27 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
         const los = [...form.querySelectorAll<HTMLInputElement>('input[name="lo"]:checked')].map((c) => Number(c.value));
         const captions = photos.map((p) => p.caption?.trim()).filter(Boolean) as string[];
         aiBtn.disabled = true;
-        say(aiMsg, 'Writing…', 'Piszę…');
+        const payload = JSON.stringify({ title, strand, summary: field('summary').value.trim(), hours: Number(field('hours').value) || 0, lang, los, captions });
+        // The model can be briefly busy (HTTP 503), so retry a few times.
+        const ATTEMPTS = 4;
         try {
-          const res = await fetch(AI_WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, strand, summary: field('summary').value.trim(), hours: Number(field('hours').value) || 0, lang, los, captions }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.text) throw new Error(data.error || `HTTP ${res.status}`);
-          reflEl.value = data.text;
-          reflEl.dispatchEvent(new Event('input'));
-          say(aiMsg, 'Draft added. Read it and make it your own.', 'Dodano szkic. Przeczytaj go i napisz po swojemu.', 'ok');
+          let lastErr = '';
+          for (let i = 0; i < ATTEMPTS; i++) {
+            say(aiMsg, i ? `Model is busy, retrying… (${i + 1}/${ATTEMPTS})` : 'Writing…', i ? `Model zajęty, ponawiam… (${i + 1}/${ATTEMPTS})` : 'Piszę…');
+            const res = await fetch(AI_WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.text) {
+              reflEl.value = data.text;
+              reflEl.dispatchEvent(new Event('input'));
+              say(aiMsg, 'Draft added. Read it and make it your own.', 'Dodano szkic. Przeczytaj go i napisz po swojemu.', 'ok');
+              return;
+            }
+            lastErr = data.error || `HTTP ${res.status}`;
+            const busy = res.status === 502 || res.status === 503 || /503|UNAVAILABLE|high demand/i.test(JSON.stringify(data));
+            if (!busy) break;
+            await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+          }
+          say(aiMsg, `AI couldn't write this (${lastErr}). Try again.`, `AI nie zdołało napisać (${lastErr}). Spróbuj ponownie.`, 'err');
         } catch (err: any) {
           say(aiMsg, `AI couldn't write this (${err?.message ?? err}).`, `AI nie zdołało napisać (${err?.message ?? err}).`, 'err');
         } finally {

@@ -25,7 +25,7 @@
 // https://casportfolio.pl (defaults to "*", i.e. any site).
 // =============================================================================
 
-const MODEL = 'gemini-2.0-flash';
+const MODEL = 'gemini-3.8-flash';
 
 const LO = {
   1: { en: 'Identify own strengths and develop areas for growth', pl: 'Rozpoznawanie własnych mocnych stron i rozwijanie obszarów do poprawy' },
@@ -98,21 +98,25 @@ export default {
     if (!b.title || !b.strand) return json({ error: 'Need at least a title and a strand.' }, 400);
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
-    let r;
-    try {
-      r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(b) }] }],
-          generationConfig: { temperature: 0.85, maxOutputTokens: 1200, topP: 0.95 },
-        }),
-      });
-    } catch (e) {
-      return json({ error: 'Could not reach Gemini.' }, 502);
+    const reqBody = JSON.stringify({
+      contents: [{ parts: [{ text: buildPrompt(b) }] }],
+      generationConfig: { temperature: 0.85, maxOutputTokens: 1200, topP: 0.95 },
+    });
+    // The model is sometimes briefly overloaded (HTTP 503); retry a few times.
+    let r, detail = '';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await new Promise((res) => setTimeout(res, 800 * attempt));
+      try {
+        r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+      } catch (e) {
+        detail = 'Could not reach Gemini.';
+        continue;
+      }
+      if (r.ok) break;
+      detail = (await r.text()).slice(0, 300);
+      if (r.status !== 503 && r.status !== 429 && r.status < 500) break;
     }
-    if (!r.ok) {
-      const detail = (await r.text()).slice(0, 300);
+    if (!r || !r.ok) {
       return json({ error: 'Gemini error', detail }, 502);
     }
     const data = await r.json();

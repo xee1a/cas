@@ -4,4 +4,4 @@
 // Leave this null and the AI button is hidden. After you deploy the Worker,
 // paste its URL here (e.g. 'https://cas-ai.<your-subdomain>.workers.dev'),
 // then rebuild and push. The Gemini API key lives in the Worker, never here.
-export const AI_WORKER_URL: string | null = null;
+export const AI_WORKER_URL: string | null = 'https://cas-ai.alex-sobczyk108.workers.dev';
