@@ -28,6 +28,10 @@ import T from '../components/T.astro';
   }
   .live-gallery button:hover img { transform: translateY(-2px); box-shadow: var(--shadow); }
   .live-gallery figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+  .live-video { margin: 0 0 16px; }
+  .live-video-frame { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 12px; display: block; }
+  .live-video-el { width: 100%; max-height: 70vh; border-radius: 12px; border: 1px solid var(--border); display: block; background: #000; }
+  .live-video-link { word-break: break-all; }
   .live-evidence { margin: 36px 0 8px; }
   .live-evidence h2 {
     font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em;
@@ -65,6 +69,37 @@ import T from '../components/T.astro';
     return out;
   }
 
+  // Turn a video URL into an embed: YouTube/Vimeo as an iframe, a direct file as
+  // <video>, anything else as a plain link.
+  function videoEmbed(url: string): HTMLElement {
+    const frame = (src: string) => {
+      const f = document.createElement('iframe');
+      f.src = src;
+      f.className = 'live-video-frame';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      f.allowFullscreen = true;
+      f.loading = 'lazy';
+      return f;
+    };
+    const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
+    if (yt) return frame(`https://www.youtube-nocookie.com/embed/${yt[1]}`);
+    const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeo) return frame(`https://player.vimeo.com/video/${vimeo[1]}`);
+    if (/\.(mp4|webm|ogg|ogv|mov)(\?.*)?$/i.test(url)) {
+      const v = h('video', 'live-video-el');
+      v.src = url;
+      v.controls = true;
+      v.preload = 'metadata';
+      return v;
+    }
+    const a = h('a', 'live-video-link');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = url;
+    return a;
+  }
+
   document.addEventListener('astro:page-load', async () => {
     const root = document.getElementById('live-post');
     if (!root || root.dataset.loaded) return;
@@ -98,30 +133,38 @@ import T from '../components/T.astro';
     root.append(back, header, prose);
 
     const photos = post.photoCount ? await fetchPhotos(personSlug, id).catch(() => []) : [];
-    if (photos.length) {
+    const videoEl = post.video ? videoEmbed(post.video) : null;
+    if (videoEl || photos.length) {
       const sec = h('section', 'live-evidence');
       sec.append(h('h2'));
       sec.firstChild!.appendChild(t('Evidence', 'Dowody'));
-      const grid = h('div', 'live-gallery');
-      for (const ph of photos) {
-        const fig = h('figure');
-        const btn = h('button');
-        btn.type = 'button';
-        const img = h('img');
-        img.src = ph.src;
-        img.alt = ph.caption || post.title;
-        img.loading = 'lazy';
-        btn.append(img);
-        btn.addEventListener('click', () => {
-          const lb = document.getElementById('lightbox')!;
-          lb.querySelector('img')!.src = ph.src;
-          lb.hidden = false;
-        });
-        fig.append(btn);
-        if (ph.caption) fig.append(h('figcaption', undefined, ph.caption));
-        grid.append(fig);
+      if (videoEl) {
+        const vwrap = h('div', 'live-video');
+        vwrap.append(videoEl);
+        sec.append(vwrap);
       }
-      sec.append(grid);
+      if (photos.length) {
+        const grid = h('div', 'live-gallery');
+        for (const ph of photos) {
+          const fig = h('figure');
+          const btn = h('button');
+          btn.type = 'button';
+          const img = h('img');
+          img.src = ph.src;
+          img.alt = ph.caption || post.title;
+          img.loading = 'lazy';
+          btn.append(img);
+          btn.addEventListener('click', () => {
+            const lb = document.getElementById('lightbox')!;
+            lb.querySelector('img')!.src = ph.src;
+            lb.hidden = false;
+          });
+          fig.append(btn);
+          if (ph.caption) fig.append(h('figcaption', undefined, ph.caption));
+          grid.append(fig);
+        }
+        sec.append(grid);
+      }
       root.append(sec);
     }
 

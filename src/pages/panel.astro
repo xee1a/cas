@@ -115,13 +115,18 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
         </label>
 
         <div class="p-field">
-          <span><T en="Photos" pl="Zdjęcia" /> <em><T en="up to 12, resized automatically" pl="maks. 12, zmniejszane automatycznie" /></em></span>
+          <span><T en="Photos" pl="Zdjęcia" /> <em><T en="resized automatically" pl="zmniejszane automatycznie" /></em></span>
           <label class="p-drop" id="p-drop">
             <input type="file" accept="image/*" multiple id="p-files" />
             <T en="Click or drop photos here" pl="Kliknij albo upuść zdjęcia tutaj" />
           </label>
           <div class="p-photos" id="p-photos"></div>
         </div>
+
+        <label class="p-field">
+          <span><T en="Video" pl="Wideo" /> <em><T en="optional: a YouTube, Vimeo or direct video link" pl="opcjonalnie: link do YouTube, Vimeo lub pliku wideo" /></em></span>
+          <input name="video" type="url" maxlength="400" data-ph-en="https://youtube.com/watch?v=..." data-ph-pl="https://youtube.com/watch?v=..." />
+        </label>
 
         <div class="p-actions">
           <p class="p-msg" id="p-msg"></p>
@@ -342,8 +347,9 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
   } from '../lib/live';
   import { PEOPLE, getPerson } from '../people';
 
-  const MAX_PHOTOS = 12;
+  const MAX_PHOTOS = 60; // generous cap; photos are stored in the database, so keep it sane
   const MAX_PHOTO_CHARS = 1_300_000; // keep in sync with database.rules.json
+  const WRITE_CHUNK = 8_000_000; // stay well under the Realtime Database single-write limit
 
   // Shrink a photo to a JPEG data URL small enough for the database.
   async function toJpeg(file: File): Promise<string> {
@@ -686,19 +692,38 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
       };
       const summary = field('summary').value.trim();
       const reflection = field('reflection').value.trim();
+      const video = field('video').value.trim();
       if (summary) post.summary = summary;
       if (reflection) post.reflection = reflection;
+      if (video) post.video = video.slice(0, 400);
       if (hoursRaw !== '' && Number(hoursRaw) >= 0) post.hours = Number(hoursRaw);
 
       const id = editing?.id ?? push(ref(db(), `posts/${person}`)).key!;
-      const photoData = photos.length
-        ? photos.map((p) => (p.caption?.trim() ? { src: p.src, caption: p.caption.trim().slice(0, 200) } : { src: p.src }))
-        : null;
+      const photoData = photos.map((p) =>
+        p.caption?.trim() ? { src: p.src, caption: p.caption.trim().slice(0, 200) } : { src: p.src }
+      );
 
       saveBtn.disabled = true;
       say(msgEl, 'Saving…', 'Zapisywanie…');
       try {
-        await update(ref(db()), { [`posts/${person}/${id}`]: post, [`photos/${person}/${id}`]: photoData });
+        // Write the post and clear old photos, then upload photos in size-bounded
+        // chunks so no single write exceeds the Realtime Database limit.
+        await update(ref(db()), { [`posts/${person}/${id}`]: post, [`photos/${person}/${id}`]: null });
+        let batch: Record<string, unknown> = {};
+        let bytes = 0;
+        const flush = async () => {
+          if (!Object.keys(batch).length) return;
+          await update(ref(db(), `photos/${person}/${id}`), batch);
+          batch = {};
+          bytes = 0;
+        };
+        for (let i = 0; i < photoData.length; i++) {
+          const size = photoData[i].src.length + (photoData[i].caption?.length ?? 0);
+          if (bytes + size > WRITE_CHUNK) await flush();
+          batch[i] = photoData[i];
+          bytes += size;
+        }
+        await flush();
         const link = h('a', undefined);
         link.href = postUrl(person, id);
         link.append(t('View it →', 'Zobacz →'));
@@ -724,6 +749,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
       field('date').value = post.date;
       field('summary').value = post.summary ?? '';
       field('reflection').value = post.reflection ?? '';
+      field('video').value = post.video ?? '';
       field('hours').value = post.hours != null ? String(post.hours) : '';
       const los = parseLos(post.los);
       form.querySelectorAll<HTMLInputElement>('input[name="lo"]').forEach((c) => (c.checked = los.includes(Number(c.value))));

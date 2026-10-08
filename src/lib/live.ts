@@ -25,6 +25,7 @@ export interface LivePost {
   reflection?: string;
   los?: string; // "1,4"
   hours?: number;
+  video?: string; // YouTube / Vimeo / direct video URL
   photoCount?: number;
   createdAt: number;
   updatedAt: number;
