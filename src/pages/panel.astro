@@ -91,10 +91,15 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
           <textarea name="summary" rows="2" maxlength="400" data-ph-en="One or two sentences about what you did." data-ph-pl="Jedno–dwa zdania o tym, co robiłeś."></textarea>
         </label>
 
-        <label class="p-field">
-          <span><T en="Reflection" pl="Refleksja" /></span>
+        <div class="p-field">
+          <span class="p-label-row">
+            <span><T en="Reflection" pl="Refleksja" /></span>
+            <button type="button" class="p-ai-btn" id="p-ai" hidden><T en="Write with AI" pl="Napisz z AI" /></button>
+          </span>
           <textarea name="reflection" rows="12" maxlength="20000" data-ph-en={"What did you plan? What did you do? What went well or badly, what did you learn, what would you do differently?\n\nLeave an empty line between paragraphs. Start a line with \"## \" for a heading."} data-ph-pl={"Co planowałeś? Co zrobiłeś? Co poszło dobrze, a co źle, czego się nauczyłeś, co zrobiłbyś inaczej?\n\nZostaw pustą linię między akapitami. Zacznij linię od \"## \", żeby zrobić nagłówek."}></textarea>
-        </label>
+          <span class="p-msg p-ai-msg" id="p-ai-msg"></span>
+          <span class="p-ai-note p-hint" id="p-ai-note" hidden><T en="AI writes a rough first draft from your title, strand and outcomes. Always read it and make it your own." pl="AI pisze wstępny szkic na podstawie tytułu, obszaru i efektów. Zawsze przeczytaj go i napisz po swojemu." /></span>
+        </div>
 
         <fieldset class="p-field">
           <legend><T en="Learning outcomes" pl="Efekty uczenia się" /></legend>
@@ -228,6 +233,17 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
   .p-form-title { font-size: 1.15rem; margin: 0 0 18px; }
   .p-field { display: flex; flex-direction: column; gap: 6px; margin: 0 0 18px; border: 0; padding: 0; min-width: 0; }
   .p-field > span, .p-field legend { font-weight: 600; font-size: 0.9rem; padding: 0; margin-bottom: 6px; }
+  .p-label-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .p-ai-btn {
+    font: inherit; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 999px; padding: 4px 12px; margin: 0;
+  }
+  .p-ai-btn:hover { border-color: var(--text); }
+  .p-ai-btn:disabled { opacity: 0.5; cursor: default; }
+  .p-ai-msg:empty { display: none; }
+  .p-ai-msg { margin-top: 6px; }
+  .p-ai-note { margin-top: 6px; font-weight: 400; }
   .p-field em { font-style: normal; font-weight: 400; color: var(--muted); }
   .p-field input:not([type='radio']):not([type='checkbox']):not([type='file']), .p-field textarea {
     font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
@@ -346,6 +362,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
     type LivePost, type LivePhoto, type Strand,
   } from '../lib/live';
   import { PEOPLE, getPerson } from '../people';
+  import { AI_WORKER_URL } from '../ai-config';
 
   const MAX_PHOTOS = 60; // generous cap; photos are stored in the database, so keep it sane
   const MAX_PHOTO_CHARS = 1_300_000; // keep in sync with database.rules.json
@@ -666,6 +683,45 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
     });
 
     cancelBtn.addEventListener('click', resetForm);
+
+    // ---- Write with AI ----------------------------------------------------
+    const aiBtn = $<HTMLButtonElement>('p-ai');
+    const aiMsg = $('p-ai-msg');
+    if (AI_WORKER_URL) {
+      aiBtn.hidden = false;
+      $('p-ai-note').hidden = false;
+      aiBtn.addEventListener('click', async () => {
+        const lang = document.documentElement.dataset.lang === 'pl' ? 'pl' : 'en';
+        const strand = form.querySelector<HTMLInputElement>('input[name="strand"]:checked')?.value ?? '';
+        const title = field('title').value.trim();
+        if (!strand || !title) return say(aiMsg, 'Pick a strand and add a title first.', 'Najpierw wybierz obszar i dodaj tytuł.', 'err');
+        const reflEl = field('reflection') as HTMLTextAreaElement;
+        if (reflEl.value.trim()) {
+          const q = lang === 'pl' ? 'Zastąpić obecny tekst refleksji?' : 'Replace the current reflection text?';
+          if (!confirm(q)) return;
+        }
+        const los = [...form.querySelectorAll<HTMLInputElement>('input[name="lo"]:checked')].map((c) => Number(c.value));
+        const captions = photos.map((p) => p.caption?.trim()).filter(Boolean) as string[];
+        aiBtn.disabled = true;
+        say(aiMsg, 'Writing…', 'Piszę…');
+        try {
+          const res = await fetch(AI_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, strand, summary: field('summary').value.trim(), hours: Number(field('hours').value) || 0, lang, los, captions }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.text) throw new Error(data.error || `HTTP ${res.status}`);
+          reflEl.value = data.text;
+          reflEl.dispatchEvent(new Event('input'));
+          say(aiMsg, 'Draft added. Read it and make it your own.', 'Dodano szkic. Przeczytaj go i napisz po swojemu.', 'ok');
+        } catch (err: any) {
+          say(aiMsg, `AI couldn't write this (${err?.message ?? err}).`, `AI nie zdołało napisać (${err?.message ?? err}).`, 'err');
+        } finally {
+          aiBtn.disabled = false;
+        }
+      });
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
