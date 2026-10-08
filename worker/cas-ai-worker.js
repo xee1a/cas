@@ -25,7 +25,9 @@
 // https://casportfolio.pl (defaults to "*", i.e. any site).
 // =============================================================================
 
-const MODEL = 'gemini-3.8-flash';
+// Tried in order; the first that is available and not overloaded wins. Override
+// with a GEMINI_MODEL variable in the Worker settings (no code edit needed).
+const DEFAULT_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-2.5-flash'];
 
 const LO = {
   1: { en: 'Identify own strengths and develop areas for growth', pl: 'Rozpoznawanie własnych mocnych stron i rozwijanie obszarów do poprawy' },
@@ -97,24 +99,29 @@ export default {
     };
     if (!b.title || !b.strand) return json({ error: 'Need at least a title and a strand.' }, 400);
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
+    const models = env.GEMINI_MODEL ? [env.GEMINI_MODEL] : DEFAULT_MODELS;
     const reqBody = JSON.stringify({
       contents: [{ parts: [{ text: buildPrompt(b) }] }],
       generationConfig: { temperature: 0.85, maxOutputTokens: 1200, topP: 0.95 },
     });
-    // The model is sometimes briefly overloaded (HTTP 503); retry a few times.
-    let r, detail = '';
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt) await new Promise((res) => setTimeout(res, 800 * attempt));
-      try {
-        r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
-      } catch (e) {
-        detail = 'Could not reach Gemini.';
-        continue;
+    // Try each model; retry a model on a brief overload (503/429), skip it on 404,
+    // and stop on a hard error (e.g. a bad key).
+    let r = null, detail = '';
+    outer: for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt) await new Promise((res) => setTimeout(res, 700 * attempt));
+        try {
+          r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        } catch (e) {
+          detail = 'Could not reach Gemini.';
+          continue;
+        }
+        if (r.ok) break outer;
+        detail = (await r.text()).slice(0, 300);
+        if (r.status === 404) break; // model not available here, try the next one
+        if (r.status !== 503 && r.status !== 429 && r.status < 500) break outer; // hard error
       }
-      if (r.ok) break;
-      detail = (await r.text()).slice(0, 300);
-      if (r.status !== 503 && r.status !== 429 && r.status < 500) break;
     }
     if (!r || !r.ok) {
       return json({ error: 'Gemini error', detail }, 502);
