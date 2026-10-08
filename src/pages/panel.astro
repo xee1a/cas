@@ -128,10 +128,23 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
           <div class="p-photos" id="p-photos"></div>
         </div>
 
-        <label class="p-field">
-          <span><T en="Video" pl="Wideo" /> <em><T en="optional: a YouTube, Vimeo or direct video link" pl="opcjonalnie: link do YouTube, Vimeo lub pliku wideo" /></em></span>
-          <input name="video" type="url" maxlength="400" data-ph-en="https://youtube.com/watch?v=..." data-ph-pl="https://youtube.com/watch?v=..." />
-        </label>
+        <div class="p-field">
+          <span><T en="Video" pl="Wideo" /> <em><T en="optional" pl="opcjonalnie" /></em></span>
+          <label class="p-drop p-vid-drop" id="p-vid-drop" hidden>
+            <input type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime" id="p-vid-file" />
+            <T en="Click or drop a video here (MP4/WebM/MOV, up to 100 MB)" pl="Kliknij albo upuść wideo tutaj (MP4/WebM/MOV, do 100 MB)" />
+          </label>
+          <div class="p-vid-progress" id="p-vid-progress" hidden><div class="p-vid-bar" id="p-vid-bar"></div></div>
+          <div class="p-vid-current" id="p-vid-current" hidden>
+            <span class="p-vid-name" id="p-vid-name"></span>
+            <button type="button" class="p-link" id="p-vid-clear"><T en="Remove" pl="Usuń" /></button>
+          </div>
+          <span class="p-msg p-vid-msg" id="p-vid-msg"></span>
+          <details class="p-vid-link">
+            <summary><T en="or paste a YouTube / Vimeo / video link" pl="albo wklej link do YouTube / Vimeo / wideo" /></summary>
+            <input name="video" type="url" maxlength="400" data-ph-en="https://youtube.com/watch?v=..." data-ph-pl="https://youtube.com/watch?v=..." />
+          </details>
+        </div>
 
         <div class="p-actions">
           <p class="p-msg" id="p-msg"></p>
@@ -300,6 +313,17 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
     background: rgb(0 0 0 / 0.65); color: #fff; cursor: pointer; font-size: 15px; line-height: 1;
   }
   .p-photo.busy { opacity: 0.5; }
+
+  .p-vid-drop { margin: 0; }
+  .p-vid-progress { height: 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; margin-top: 10px; }
+  .p-vid-bar { height: 100%; width: 0; background: var(--text); transition: width 0.15s ease; }
+  .p-vid-current { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); }
+  .p-vid-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+  .p-vid-msg:empty { display: none; }
+  .p-vid-msg { margin-top: 8px; }
+  .p-vid-link { margin-top: 10px; }
+  .p-vid-link summary { cursor: pointer; color: var(--muted); font-size: 0.88rem; }
+  .p-vid-link input { margin-top: 8px; }
 
   .p-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
   .p-actions .p-msg { margin: 0 auto 0 0; }
@@ -618,6 +642,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
       editing = null;
       photos = [];
       renderPhotos();
+      resetVideoUI();
       setMode(false);
     }
 
@@ -683,6 +708,88 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
     });
 
     cancelBtn.addEventListener('click', resetForm);
+
+    // ---- Video upload (to the Cloudflare Worker + R2) ---------------------
+    const vidDrop = $('p-vid-drop'), vidFile = $<HTMLInputElement>('p-vid-file');
+    const vidMsg = $('p-vid-msg'), vidProg = $('p-vid-progress'), vidBar = $('p-vid-bar');
+    const vidCurrent = $('p-vid-current'), vidName = $('p-vid-name');
+    const workerBase = AI_WORKER_URL ? AI_WORKER_URL.replace(/\/$/, '') : null;
+    const isUploaded = (u: string) => !!workerBase && u.startsWith(workerBase + '/v/');
+
+    function showVideoState() {
+      const v = field('video').value.trim();
+      const uploaded = !!v && isUploaded(v);
+      vidCurrent.hidden = !uploaded;
+      if (uploaded) vidName.textContent = v.split('/').pop() || v;
+      const linkBox = form.querySelector<HTMLDetailsElement>('.p-vid-link');
+      if (linkBox) linkBox.open = !!v && !uploaded;
+    }
+    function resetVideoUI() {
+      vidProg.hidden = true;
+      vidBar.style.width = '0%';
+      say(vidMsg, '', '');
+      showVideoState();
+    }
+
+    if (workerBase) {
+      vidDrop.hidden = false;
+      const uploadVideo = async (file: File) => {
+        if (!user) return;
+        if (!/^video\/(mp4|webm|ogg|quicktime)$/.test(file.type))
+          return say(vidMsg, 'Use an MP4, WebM, OGG or MOV file.', 'Użyj pliku MP4, WebM, OGG lub MOV.', 'err');
+        if (file.size > 100 * 1024 * 1024)
+          return say(vidMsg, 'That video is over 100 MB. Trim or compress it first.', 'To wideo przekracza 100 MB. Najpierw je przytnij lub skompresuj.', 'err');
+        let token: string;
+        try { token = await user.getIdToken(); } catch { return say(vidMsg, 'Please sign in again.', 'Zaloguj się ponownie.', 'err'); }
+        vidProg.hidden = false;
+        vidBar.style.width = '0%';
+        say(vidMsg, 'Uploading…', 'Wysyłanie…');
+        await new Promise<void>((resolve) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', workerBase + '/upload');
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          xhr.setRequestHeader('Content-Type', file.type);
+          xhr.upload.addEventListener('progress', (ev) => {
+            if (ev.lengthComputable) vidBar.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`;
+          });
+          xhr.addEventListener('load', () => {
+            vidProg.hidden = true;
+            let data: any = {};
+            try { data = JSON.parse(xhr.responseText); } catch {}
+            if (xhr.status === 200 && data.url) {
+              field('video').value = data.url;
+              say(vidMsg, 'Video uploaded.', 'Wideo wysłane.', 'ok');
+              showVideoState();
+            } else {
+              say(vidMsg, `Upload failed (${data.error || 'HTTP ' + xhr.status}).`, `Nie udało się wysłać (${data.error || 'HTTP ' + xhr.status}).`, 'err');
+            }
+            resolve();
+          });
+          xhr.addEventListener('error', () => {
+            vidProg.hidden = true;
+            say(vidMsg, 'Upload failed (network).', 'Nie udało się wysłać (sieć).', 'err');
+            resolve();
+          });
+          xhr.send(file);
+        });
+      };
+      vidFile.addEventListener('change', () => {
+        if (vidFile.files?.[0]) uploadVideo(vidFile.files[0]);
+        vidFile.value = '';
+      });
+      vidDrop.addEventListener('dragover', (e) => { e.preventDefault(); vidDrop.classList.add('over'); });
+      vidDrop.addEventListener('dragleave', () => vidDrop.classList.remove('over'));
+      vidDrop.addEventListener('drop', (e) => {
+        e.preventDefault();
+        vidDrop.classList.remove('over');
+        const f = (e as DragEvent).dataTransfer?.files?.[0];
+        if (f) uploadVideo(f);
+      });
+    }
+    $('p-vid-clear').addEventListener('click', () => {
+      field('video').value = '';
+      resetVideoUI();
+    });
 
     // ---- Write with AI ----------------------------------------------------
     const aiBtn = $<HTMLButtonElement>('p-ai');
@@ -815,6 +922,7 @@ const STRANDS = ['Creativity', 'Activity', 'Service', 'Project'];
       field('summary').value = post.summary ?? '';
       field('reflection').value = post.reflection ?? '';
       field('video').value = post.video ?? '';
+      showVideoState();
       field('hours').value = post.hours != null ? String(post.hours) : '';
       const los = parseLos(post.los);
       form.querySelectorAll<HTMLInputElement>('input[name="lo"]').forEach((c) => (c.checked = los.includes(Number(c.value))));

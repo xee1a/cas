@@ -1,33 +1,54 @@
 // =============================================================================
-// CAS "Write with AI" proxy — a free Cloudflare Worker.
+// CAS Cloudflare Worker — two free jobs in one:
 //
-// It holds your Google Gemini API key (as a secret, never in the website) and
-// turns the details of a CAS entry into a first-person reflection draft.
+//   POST /          "Write with AI": turns the details of a CAS entry into a
+//                   first-person reflection draft (holds the Gemini key as a
+//                   secret, never in the website).
+//   POST /upload    Video upload: a signed-in editor uploads a video file; it
+//                   is stored in an R2 bucket and the Worker returns a URL.
+//   GET  /v/<key>   Serves an uploaded video (with range/seek support).
 //
-// ---- One-time setup (about 10 minutes, all free) ----------------------------
-// 1. Get a free Gemini API key: https://aistudio.google.com/apikey
-//    (Sign in with Google, "Create API key". The free tier is plenty.)
+// ---- One-time setup (all free) ----------------------------------------------
+// A) "Write with AI" (Gemini):
+//   1. Get a free Gemini API key: https://aistudio.google.com/apikey
+//   2. Create the Worker: https://dash.cloudflare.com -> Workers & Pages ->
+//      Create -> Create Worker. Name it e.g. "cas-ai". Deploy. Edit code,
+//      delete the sample, paste THIS whole file, Deploy.
+//   3. Settings -> Variables and Secrets -> add a Secret named GEMINI_API_KEY
+//      with your key. Deploy again.
+//   4. Copy the Worker URL (https://cas-ai.<something>.workers.dev) into
+//      src/ai-config.ts as AI_WORKER_URL, then rebuild + push.
 //
-// 2. Create the Worker. Easiest, no install:
-//    - Go to https://dash.cloudflare.com  ->  Workers & Pages  ->  Create  ->
-//      Create Worker. Give it a name like "cas-ai". Click Deploy.
-//    - Open the worker -> Edit code. Delete the sample, paste THIS whole file,
-//      click Deploy.
-//    - Settings -> Variables and Secrets -> add a Secret named GEMINI_API_KEY
-//      with your key from step 1. Deploy again.
-//    (Or with the CLI: `npx wrangler deploy worker/cas-ai-worker.js` then
-//     `npx wrangler secret put GEMINI_API_KEY`.)
+// B) Video upload (R2 object storage, 10 GB free):
+//   1. In the Cloudflare dashboard: R2 -> Overview -> (enable R2 if asked; it
+//      wants a payment method on file but stays free within 10 GB). Create a
+//      bucket named exactly  cas-videos.
+//   2. Open the Worker -> Settings -> Bindings (or "Variables and Bindings") ->
+//      Add -> R2 bucket. Variable name:  VIDEOS   Bucket:  cas-videos.  Deploy.
+//   3. That's it. The Firebase database URL below already matches this project;
+//      only change FIREBASE_DB_URL (as a plain variable) if you move projects.
 //
-// 3. Copy the Worker URL (looks like https://cas-ai.<something>.workers.dev)
-//    and paste it into src/ai-config.ts as AI_WORKER_URL, then rebuild + push.
-//
-// Optional: restrict who can call it by setting an ALLOW_ORIGIN variable to
-// https://casportfolio.pl (defaults to "*", i.e. any site).
+// Optional: set ALLOW_ORIGIN to https://casportfolio.pl to lock down callers
+// (defaults to "*").
 // =============================================================================
 
-// Tried in order; the first that is available and not overloaded wins. Override
-// with a GEMINI_MODEL variable in the Worker settings (no code edit needed).
+// Gemini models tried in order; the first available and not overloaded wins.
+// Override with a GEMINI_MODEL variable (no code edit needed).
 const DEFAULT_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+
+// Firebase Realtime Database (public URL; used only to check the uploader is an
+// editor). Override with a FIREBASE_DB_URL variable.
+const DEFAULT_DB_URL = 'https://komentarzecas-default-rtdb.europe-west1.firebasedatabase.app';
+
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB; Workers' request body limit
+// Only browser-playable types, mapped to the file extension we store under so
+// the website's <video> player recognises them.
+const VIDEO_EXT = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/ogg': 'ogv',
+  'video/quicktime': 'mov',
+};
 
 const LO = {
   1: { en: 'Identify own strengths and develop areas for growth', pl: 'Rozpoznawanie własnych mocnych stron i rozwijanie obszarów do poprawy' },
@@ -70,18 +91,115 @@ function buildPrompt(b) {
   ].join('\n');
 }
 
+// Pull the email out of a Firebase ID token WITHOUT trusting it; the token is
+// actually verified by using it to read a node the rules protect (below).
+function jwtEmail(token) {
+  try {
+    const part = token.split('.')[1];
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decodeURIComponent(escape(json))).email || null;
+  } catch {
+    return null;
+  }
+}
+
+// Returns the editor's email if the bearer token belongs to a listed editor,
+// else null. The Realtime Database read both verifies the token (an invalid or
+// expired one is rejected) and enforces the editors allow-list.
+async function authorizeEditor(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  const token = auth.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  const email = jwtEmail(token);
+  if (!email) return null;
+  const key = email.toLowerCase().replace(/\./g, ',');
+  const dbUrl = (env.FIREBASE_DB_URL || DEFAULT_DB_URL).replace(/\/$/, '');
+  let r;
+  try {
+    r = await fetch(`${dbUrl}/editors/${encodeURIComponent(key)}.json?auth=${encodeURIComponent(token)}`);
+  } catch {
+    return null;
+  }
+  if (!r.ok) return null;
+  const val = await r.json().catch(() => null);
+  return val ? email : null;
+}
+
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOW_ORIGIN || '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
+      'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
       'Access-Control-Max-Age': '86400',
     };
     const json = (obj, status = 200) =>
       new Response(JSON.stringify(obj), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    // ---- Serve an uploaded video -------------------------------------------
+    if (url.pathname.startsWith('/v/') && (request.method === 'GET' || request.method === 'HEAD')) {
+      if (!env.VIDEOS) return new Response('No video storage configured.', { status: 500, headers: cors });
+      const key = decodeURIComponent(url.pathname.slice(3));
+      const head = await env.VIDEOS.head(key);
+      if (!head) return new Response('Not found.', { status: 404, headers: cors });
+      const headers = new Headers(cors);
+      head.writeHttpMetadata(headers);
+      headers.set('etag', head.httpEtag);
+      headers.set('Accept-Ranges', 'bytes');
+      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      const size = head.size;
+
+      const range = request.headers.get('Range');
+      const m = range && /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+      if (m) {
+        let start = m[1] === '' ? undefined : Number(m[1]);
+        let end = m[2] === '' ? undefined : Number(m[2]);
+        if (start === undefined) { start = Math.max(0, size - (end ?? 0)); end = size - 1; }
+        else if (end === undefined || end >= size) end = size - 1;
+        if (isNaN(start) || isNaN(end) || start > end || start >= size) {
+          headers.set('Content-Range', `bytes */${size}`);
+          return new Response(null, { status: 416, headers });
+        }
+        headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+        headers.set('Content-Length', String(end - start + 1));
+        if (request.method === 'HEAD') return new Response(null, { status: 206, headers });
+        const obj = await env.VIDEOS.get(key, { range: { offset: start, length: end - start + 1 } });
+        return new Response(obj.body, { status: 206, headers });
+      }
+
+      headers.set('Content-Length', String(size));
+      if (request.method === 'HEAD') return new Response(null, { status: 200, headers });
+      const obj = await env.VIDEOS.get(key);
+      return new Response(obj.body, { status: 200, headers });
+    }
+
+    // ---- Upload a video -----------------------------------------------------
+    if (url.pathname === '/upload' && request.method === 'POST') {
+      if (!env.VIDEOS) return json({ error: 'Video storage is not set up (missing VIDEOS bucket).' }, 500);
+      const email = await authorizeEditor(request, env);
+      if (!email) return json({ error: 'Only signed-in editors can upload videos.' }, 403);
+      const ct = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+      const ext = VIDEO_EXT[ct];
+      if (!ext) return json({ error: 'Unsupported format. Use MP4, WebM, OGG or MOV.' }, 415);
+      const declared = Number(request.headers.get('Content-Length') || 0);
+      if (declared > MAX_VIDEO_BYTES) return json({ error: 'Video is too large (max 100 MB).' }, 413);
+      const body = await request.arrayBuffer();
+      if (!body.byteLength) return json({ error: 'The upload was empty.' }, 400);
+      if (body.byteLength > MAX_VIDEO_BYTES) return json({ error: 'Video is too large (max 100 MB).' }, 413);
+      const key = `${crypto.randomUUID().replace(/-/g, '')}.${ext}`;
+      try {
+        await env.VIDEOS.put(key, body, { httpMetadata: { contentType: ct } });
+      } catch (e) {
+        return json({ error: 'Could not store the video. Try again.' }, 502);
+      }
+      return json({ url: `${url.origin}/v/${key}` });
+    }
+
+    // ---- Write with AI (default POST) --------------------------------------
     if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
     if (!env.GEMINI_API_KEY) return json({ error: 'Worker is missing GEMINI_API_KEY' }, 500);
 
@@ -108,11 +226,11 @@ export default {
     // and stop on a hard error (e.g. a bad key).
     let r = null, detail = '';
     outer: for (const model of models) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+      const api = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
       for (let attempt = 0; attempt < 3; attempt++) {
         if (attempt) await new Promise((res) => setTimeout(res, 700 * attempt));
         try {
-          r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+          r = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
         } catch (e) {
           detail = 'Could not reach Gemini.';
           continue;
