@@ -96,8 +96,8 @@ export const PEOPLE: Person[] = [
     photo: '',
   },
   {
-    slug: 'david',
-    name: 'David Losev',
+    slug: 'piotr',
+    name: 'Piotr Usiatycki',
     tagline: 'IB Diploma Programme · CAS Portfolio',
     taglinePl: 'Program IB Diploma · Portfolio CAS',
     intro:
