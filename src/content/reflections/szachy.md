@@ -7,6 +7,12 @@ learningOutcomes: [1, 2]
 summary: "Playing chess regularly and working on my strategic thinking."
 tags: ["chess", "strategy", "growth"]
 hours: 0
+# Evidence: chess and puzzle stats
+gallery:
+  - src: /images/alex_creativity/image.png
+    caption: "My bullet rating over time"
+  - src: /images/alex_creativity/IMG_3152.png
+    caption: "My puzzle stats"
 ---
 
 ## Goal
