@@ -14,18 +14,13 @@ gallery:
 ---
 
 ## What I did
-A week after finishing the lesson plan, I set up the technical side of the
-classes. I created a Tinkercad class, **"Druk 3D CAL Widawa"**, and made an
-individual account for every child, so each of them can log in with their own
-login and keep their own designs. I turned **Safe Mode on** for the whole class
-so the kids work in a protected environment.
-
-<!-- Add if you want: how many kids, why Tinkercad (free, browser-based, no
-     install), how you handed out the logins. -->
+A week after finishing the lesson plan I set up the technical side of the
+classes. I created a Tinkercad class called "Druk 3D CAL Widawa" and made an
+individual account for every child, so each of them can log in on their own and
+keep their own designs. I also turned Safe Mode on for the whole class so the
+kids work in a protected space.
 
 ## Reflection
-<!-- LO3 (initiating and planning): getting the accounts and class ready is part
-     of making the classes actually happen, not just planning them on paper.
-     LO7 (ethics): you're responsible for children's accounts and data — Safe
-     Mode, individual logins, keeping the class private (that's why the class
-     code is blurred in the screenshot). -->
+Getting all the accounts ready made the classes feel real rather than just an
+idea on paper. It also reminded me that I am responsible for the kids' accounts,
+which is why I kept the class private and hid the class code in the screenshot.

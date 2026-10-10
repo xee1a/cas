@@ -16,15 +16,12 @@ gallery:
 ---
 
 ## What I did
-In the first week of CAS I helped at the **Food Not Bombs** soup kitchen, an
-initiative that turns food rescued from being wasted into free meals for people
-in need. I chopped vegetables and helped prepare the food.
-
-<!-- Describe: what exactly you did, who with, how the action is organised. -->
+In the first week of CAS I helped at the Food Not Bombs soup kitchen, a group
+that turns food saved from being wasted into free meals for people in need. I
+chopped vegetables and helped get the food ready.
 
 ## Reflection
-<!-- LO6 (global significance): Food Not Bombs touches real, global issues —
-     food waste, hunger and poverty. What struck you? Did it change how you see
-     these problems?
-     LO5 (collaboration): what was the teamwork in the kitchen like?
-     LO7 (ethics): why is wasting food an ethical problem? -->
+Seeing how much good food would otherwise be thrown away made me think
+differently about waste and about how many people near me go without. Working in
+the kitchen also showed me how much faster things go when a group just gets on
+with it together.

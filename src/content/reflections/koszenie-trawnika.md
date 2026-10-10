@@ -16,11 +16,10 @@ gallery:
 ---
 
 ## What I did
-In the second week of CAS I helped a neighbour who finds it hard to manage her
-garden on her own, so I mowed her lawn.
-
-<!-- Describe: how it came about, how long it took, how the neighbour reacted. -->
+In the second week of CAS I helped a neighbour who finds it hard to look after
+her garden on her own, so I mowed her lawn for her.
 
 ## Reflection
-<!-- LO1 (strengths / growth): a small but real act of helping someone —
-     what did it give you? How does it feel to help someone in your neighbourhood? -->
+It was a small thing but it clearly meant a lot to her, which reminded me that
+helping someone does not have to be complicated to matter. It felt good to do
+something useful for a person living right next to me.

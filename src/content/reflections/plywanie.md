@@ -98,12 +98,12 @@ fitness:
 ---
 
 ## Goal
-I try my best to swim at least 1 km, three times a week. I track every session
-on my Apple Watch, so I can see my distance, pace and heart rate. The summary
-below is pulled straight from those workouts.
+I try to swim at least 1 km three times a week and I track every session on my
+Apple Watch, so I can see my distance, pace and heart rate. The summary below
+comes straight from those workouts.
 
 ## Reflection
-<!-- LO4 (commitment / perseverance): how do you keep the 3x-a-week routine going,
-     even when you don't feel like it?
-     LO1 (strengths / growth): what does the data show about your progress — how
-     have your pace, heart rate and distance changed since 15 Sep? -->
+Keeping the routine going three times a week is the hardest part, especially on
+the mornings when I do not feel like it, but showing up anyway is what the whole
+thing is really about. Looking back at the numbers I can see my pace and heart
+rate slowly improving since September, which keeps me motivated.
