@@ -25,6 +25,14 @@ gallery:
     caption: "25 Sep"
   - src: /images/alex_activity/sep28.webp
     caption: "28 Sep"
+  - src: /images/alex_activity/IMG_3145.png
+    caption: "30 Sep"
+  - src: /images/alex_activity/IMG_3144.png
+    caption: "1 Oct"
+  - src: /images/alex_activity/IMG_3142.png
+    caption: "5 Oct"
+  - src: /images/alex_activity/IMG_3143.png
+    caption: "8 Oct"
 # Real data from Apple Watch (Pool Swim summaries)
 fitness:
   activity: "Swimming"
