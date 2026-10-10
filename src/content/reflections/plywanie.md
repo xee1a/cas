@@ -29,6 +29,30 @@ gallery:
 fitness:
   activity: "Swimming"
   workouts:
+    - date: "8 Oct"
+      distance: 1050
+      duration: "34:00"
+      pace: "3:44 /100m"
+      calories: 476
+      avgHr: 145
+    - date: "5 Oct"
+      distance: 1025
+      duration: "48:24"
+      pace: "4:49 /100m"
+      calories: 468
+      avgHr: 128
+    - date: "1 Oct"
+      distance: 1275
+      duration: "36:28"
+      pace: "2:51 /100m"
+      calories: 609
+      avgHr: 143
+    - date: "30 Sep"
+      distance: 1300
+      duration: "37:05"
+      pace: "2:51 /100m"
+      calories: 546
+      avgHr: 140
     - date: "28 Sep"
       distance: 1000
       duration: "32:44"
