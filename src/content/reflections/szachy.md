@@ -13,6 +13,10 @@ gallery:
     caption: "My bullet rating over time"
   - src: /images/alex_creativity/IMG_3152.png
     caption: "My puzzle stats"
+  - src: /images/alex_creativity/puzzles-dashboard.webp
+    caption: "Puzzle dashboard after more training"
+  - src: /images/alex_creativity/puzzles-map.webp
+    caption: "My puzzle solving streak"
 ---
 
 ## Goal
