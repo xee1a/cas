@@ -33,10 +33,74 @@ gallery:
     caption: "5 Oct"
   - src: /images/alex_activity/IMG_3143.png
     caption: "8 Oct"
+  - src: /images/alex_activity/oct13.webp
+    caption: "13 Oct"
+  - src: /images/alex_activity/oct15.webp
+    caption: "15 Oct"
+  - src: /images/alex_activity/oct22.webp
+    caption: "22 Oct"
+  - src: /images/alex_activity/oct26.webp
+    caption: "26 Oct"
+  - src: /images/alex_activity/oct29.webp
+    caption: "29 Oct"
+  - src: /images/alex_activity/nov5.webp
+    caption: "5 Nov"
+  - src: /images/alex_activity/nov12.webp
+    caption: "12 Nov"
+  - src: /images/alex_activity/nov16.webp
+    caption: "16 Nov"
 # Real data from Apple Watch (Pool Swim summaries)
 fitness:
   activity: "Swimming"
   workouts:
+    - date: "16 Nov"
+      distance: 1025
+      duration: "23:25"
+      pace: "2:19 /100m"
+      calories: 365
+      avgHr: 140
+    - date: "12 Nov"
+      distance: 800
+      duration: "19:57"
+      pace: "2:29 /100m"
+      calories: 319
+      avgHr: 142
+    - date: "5 Nov"
+      distance: 1000
+      duration: "24:31"
+      pace: "2:27 /100m"
+      calories: 386
+      avgHr: 141
+    - date: "29 Oct"
+      distance: 1000
+      duration: "25:31"
+      pace: "2:33 /100m"
+      calories: 407
+      avgHr: 145
+    - date: "26 Oct"
+      distance: 1025
+      duration: "25:59"
+      pace: "2:30 /100m"
+      calories: 402
+      avgHr: 138
+    - date: "22 Oct"
+      distance: 1000
+      duration: "26:48"
+      pace: "2:40 /100m"
+      calories: 426
+      avgHr: 145
+    - date: "15 Oct"
+      distance: 1000
+      duration: "26:24"
+      pace: "2:38 /100m"
+      calories: 410
+      avgHr: 139
+    - date: "13 Oct"
+      distance: 1000
+      duration: "26:35"
+      pace: "2:39 /100m"
+      calories: 450
+      avgHr: 138
     - date: "8 Oct"
       distance: 1050
       duration: "34:00"
@@ -111,7 +175,9 @@ Apple Watch, so I can see my distance, pace and heart rate. The summary below
 comes straight from those workouts.
 
 ## Reflection
-Keeping the routine going three times a week is the hardest part, especially on
-the mornings when I do not feel like it, but showing up anyway is what the whole
-thing is really about. Looking back at the numbers I can see my pace and heart
-rate slowly improving since September, which keeps me motivated.
+Over the past month I have kept swimming regularly, usually around a kilometre a
+session, and I can see it paying off because my times have dropped and my pace is
+noticeably faster than back in September. Lately I have been feeling pretty tired,
+so a few of the swims were shorter and I have been trying to listen to my body
+instead of forcing every session. One week I swapped a swim for a hike to give my
+shoulders a rest and still stay active.

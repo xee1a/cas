@@ -29,7 +29,8 @@ so I can fit a few in whenever I have a spare moment, and they sharpen my tactic
 while full games let me practise longer plans and learn from the ones I lose.
 
 ## Reflection
-The biggest thing chess has taught me is patience, because the mistakes I make are
-almost always the moves I played too fast without checking my opponent's reply.
-Treating losses as something to learn from instead of just a bad result has made
-me calmer, and that slower, more careful thinking helps me away from the board too.
+After a month of playing and solving puzzles almost every day, I have started to
+notice that I am thinking faster, spotting tactics like pins and forks much
+quicker than I used to. The biggest lesson is still patience, because most of my
+mistakes come from moving too fast without checking my opponent's reply, but over
+this month I can feel the balance between speed and care slowly improving.
