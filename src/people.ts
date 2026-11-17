@@ -31,47 +31,8 @@ export const PEOPLE: Person[] = [
     photo: '',
   },
   {
-    slug: 'tymon',
-    name: 'Tymon Mikita',
-    tagline: 'IB Diploma Programme · CAS Portfolio',
-    taglinePl: 'Program IB Diploma · Portfolio CAS',
-    intro:
-      'My CAS portfolio for the IB Diploma Programme, covering my Creativity, ' +
-      'Activity and Service experiences, with reflections and evidence.',
-    introPl:
-      'Moje portfolio CAS w ramach programu IB Diploma, obejmujące doświadczenia ' +
-      'z zakresu Kreatywności, Aktywności i Służby, wraz z refleksjami i dowodami.',
-    photo: '',
-  },
-  {
     slug: 'mikolaj',
     name: 'Mikołaj Paradowski',
-    tagline: 'IB Diploma Programme · CAS Portfolio',
-    taglinePl: 'Program IB Diploma · Portfolio CAS',
-    intro:
-      'My CAS portfolio for the IB Diploma Programme, covering my Creativity, ' +
-      'Activity and Service experiences, with reflections and evidence.',
-    introPl:
-      'Moje portfolio CAS w ramach programu IB Diploma, obejmujące doświadczenia ' +
-      'z zakresu Kreatywności, Aktywności i Służby, wraz z refleksjami i dowodami.',
-    photo: '',
-  },
-  {
-    slug: 'michal',
-    name: 'Michał Zapaśnik',
-    tagline: 'IB Diploma Programme · CAS Portfolio',
-    taglinePl: 'Program IB Diploma · Portfolio CAS',
-    intro:
-      'My CAS portfolio for the IB Diploma Programme, covering my Creativity, ' +
-      'Activity and Service experiences, with reflections and evidence.',
-    introPl:
-      'Moje portfolio CAS w ramach programu IB Diploma, obejmujące doświadczenia ' +
-      'z zakresu Kreatywności, Aktywności i Służby, wraz z refleksjami i dowodami.',
-    photo: '',
-  },
-  {
-    slug: 'luis',
-    name: 'Luis Bastock',
     tagline: 'IB Diploma Programme · CAS Portfolio',
     taglinePl: 'Program IB Diploma · Portfolio CAS',
     intro:
